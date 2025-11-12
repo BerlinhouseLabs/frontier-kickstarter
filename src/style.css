@@ -5,88 +5,181 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #1a237e, #0d1b2a);
+  color: #0f172a;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 24px;
 }
 
-.container {
-  max-width: 600px;
+.swap-container {
   width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-h1 {
-  color: white;
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
+.swap-header {
   text-align: center;
+  color: #e2e8f0;
 }
 
-.card {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  margin-bottom: 1.5rem;
-}
-
-.card h2 {
-  color: #333;
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #667eea;
-  padding-bottom: 0.5rem;
-}
-
-.card p {
-  color: #666;
-  line-height: 1.6;
+.swap-header h1 {
+  font-size: 2rem;
   margin-bottom: 0.5rem;
 }
 
-.card strong {
-  color: #333;
+.swap-subtitle {
+  font-size: 0.95rem;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.wallet-summary {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.swap-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 0.9rem;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.token-label {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.field-row input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  color: #1f2937;
+  outline: none;
+}
+
+.field-row input:disabled {
+  color: #94a3b8;
+}
+
+.quote-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.quote-value {
+  font-size: 1.25rem;
   font-weight: 600;
 }
 
-.loading {
-  text-align: center;
-  color: white;
-  font-size: 1.2rem;
+.helper-text {
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 button {
-  background: #667eea;
-  color: white;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-  width: 100%;
-  margin-top: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-button:hover {
-  background: #5568d3;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+#quote-btn {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
-button:active {
-  transform: translateY(0);
+#quote-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
 }
 
-.counter {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #667eea;
+#swap-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+}
+
+#swap-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+.status-message {
+  color: #0f766e;
+  font-size: 0.9rem;
+}
+
+.loading {
+  color: #e2e8f0;
+  font-size: 1.1rem;
   text-align: center;
-  margin: 1rem 0;
+}
+
+.error-state {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 24px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f1f5f9;
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.4);
+}
+
+.error-state h2 {
+  margin-bottom: 12px;
 }

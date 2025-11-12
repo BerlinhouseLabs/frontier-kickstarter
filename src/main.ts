@@ -2,130 +2,279 @@ import { FrontierSDK, type User } from '@frontiertower/frontier-sdk';
 import { isInFrontierApp, renderStandaloneMessage } from '@frontiertower/frontier-sdk/ui-utils';
 import './style.css';
 
+type SwapQuote = {
+  amountOut: bigint;
+  minimumAmountOut: bigint;
+  routerAddress: string;
+  calldata: string;
+  value: bigint;
+};
+
 const sdk = new FrontierSDK();
 
-// USDC on Base Sepolia
-const CHRISTIANPETERS_ETH = '0x0a3772AA1432D31CDB2e90246525496e65E99ad8';
-const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
-const ONE_DOLLAR = 1000000n; // 1 USDC with 6 decimals
+const CHAIN_ID = 8453; // Base mainnet
+const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
+const USDC_ADDRESS = '0x833589fcd6edb6e08f4c7c3bc123e0f4f70b786';
+const ETH_DECIMALS = 18;
+const USDC_DECIMALS = 6;
 
 async function init() {
-  const app = document.querySelector<HTMLDivElement>('#app')!;
-  
-  // Check if running standalone
+  const app = document.querySelector<HTMLDivElement>('#app');
+
+  if (!app) {
+    throw new Error('App container not found');
+  }
+
   if (!isInFrontierApp()) {
-    renderStandaloneMessage(app, 'Kickstarter');
+    renderStandaloneMessage(app, 'ETH → USDC Swap');
     return;
   }
-  
+
+  app.innerHTML = '<div class="loading">Loading swap experience...</div>';
+
   try {
-    // Show loading
-    app.innerHTML = '<div class="loading">Loading...</div>';
+    const [user, address, balance] = await Promise.all([
+      sdk.getUser().getDetails(),
+      sdk.getWallet().getAddress(),
+      sdk.getWallet().getBalanceFormatted(),
+    ]);
 
-    // Fetch user data
-    const user = await sdk.getUser().getDetails();
+    let amountInput = '';
+    let quote: SwapQuote | null = null;
+    let quoteError = '';
+    let infoMessage = '';
+    let isFetchingQuote = false;
+    let isSwapping = false;
 
-    // Fetch wallet data
-    let balance = await sdk.getWallet().getBalanceFormatted();
-    const address = await sdk.getWallet().getAddress();
+    const render = () => {
+      const estimatedUsdc = quote ? formatUnits(quote.amountOut, USDC_DECIMALS, 4) : '--';
+      const minimumUsdc = quote ? formatUnits(quote.minimumAmountOut, USDC_DECIMALS, 4) : '--';
 
-    // Get stored counter or initialize
-    let counter = await sdk.getStorage().get('counter') || 0;
-    let isSending = false;
-    let sendStatus = '';
+      app.innerHTML = `
+        <div class="swap-container">
+          <header class="swap-header">
+            <h1>Swap ETH for USDC</h1>
+            <p class="swap-subtitle">A minimal Uniswap-powered swap inside Frontier Tower.</p>
+          </header>
 
-    // Render and setup button handlers
-    const renderAndAttach = () => {
-      render(app, user, balance, address, counter, isSending, sendStatus);
-      
-      // Re-attach increment button listener
-      const incrementBtn = document.querySelector('#increment-btn');
-      incrementBtn?.addEventListener('click', async () => {
-        counter++;
-        await sdk.getStorage().set('counter', counter);
-        renderAndAttach();
+          <section class="wallet-summary">
+            <p><strong>User:</strong> ${formatUserName(user)}</p>
+            <p><strong>Wallet:</strong> ${truncateAddress(address)}</p>
+            <p><strong>Balance:</strong> ${balance}</p>
+          </section>
+
+          <section class="swap-card">
+            <div class="field">
+              <label for="amount-input">You pay</label>
+              <div class="field-row">
+                <span class="token-label">ETH</span>
+                <input
+                  id="amount-input"
+                  type="number"
+                  min="0"
+                  step="0.0001"
+                  placeholder="0.0"
+                  value="${amountInput}"
+                  ${isFetchingQuote || isSwapping ? 'disabled' : ''}
+                />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>You receive (estimated)</label>
+              <div class="quote-row">
+                <span class="token-label">USDC</span>
+                <span class="quote-value">${estimatedUsdc}</span>
+              </div>
+              ${quote ? `<p class="helper-text">Minimum received: ${minimumUsdc} USDC</p>` : ''}
+            </div>
+
+            ${quoteError ? `<p class="error-message">${quoteError}</p>` : ''}
+            ${infoMessage ? `<p class="status-message">${infoMessage}</p>` : ''}
+
+            <button id="quote-btn" ${isFetchingQuote || isSwapping ? 'disabled' : ''}>
+              ${isFetchingQuote ? 'Fetching quote…' : 'Get Quote'}
+            </button>
+
+            <button id="swap-btn" ${!quote || isSwapping ? 'disabled' : ''}>
+              ${isSwapping ? 'Swapping…' : 'Swap ETH → USDC'}
+            </button>
+
+            <p class="helper-text">Quotes use Uniswap on Base mainnet (chain ID ${CHAIN_ID}).</p>
+          </section>
+        </div>
+      `;
+
+      const amountInputElement = document.querySelector<HTMLInputElement>('#amount-input');
+      amountInputElement?.addEventListener('input', (event) => {
+        amountInput = (event.target as HTMLInputElement).value;
+        quote = null;
+        quoteError = '';
+        infoMessage = '';
+        render();
       });
 
-      // Attach send button listener
-      const sendBtn = document.querySelector<HTMLButtonElement>('#send-btn');
-      sendBtn?.addEventListener('click', async () => {
-        isSending = true;
-        sendStatus = '';
-        renderAndAttach();
+      const quoteButton = document.querySelector<HTMLButtonElement>('#quote-btn');
+      quoteButton?.addEventListener('click', async () => {
+        quoteError = '';
+        infoMessage = '';
+
+        if (!amountInput || Number(amountInput) <= 0) {
+          quoteError = 'Enter the amount of ETH you want to swap.';
+          render();
+          return;
+        }
 
         try {
-          const receipt = await sdk.getWallet().transferERC20(
-            USDC_ADDRESS,
-            CHRISTIANPETERS_ETH,
-            ONE_DOLLAR
-          );
-          
-          // Refetch balance after successful transfer
-          balance = await sdk.getWallet().getBalanceFormatted();
-          sendStatus = `✅ Sent! Tx: ${receipt.transactionHash.slice(0, 10)}...`;
+          isFetchingQuote = true;
+          render();
+
+          quote = await fetchQuote(amountInput);
+          infoMessage = `Estimated output: ${formatUnits(quote.amountOut, USDC_DECIMALS, 4)} USDC`;
         } catch (error) {
-          sendStatus = `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          quote = null;
+          quoteError = error instanceof Error ? error.message : 'Failed to fetch quote.';
         } finally {
-          isSending = false;
-          renderAndAttach();
+          isFetchingQuote = false;
+          render();
+        }
+      });
+
+      const swapButton = document.querySelector<HTMLButtonElement>('#swap-btn');
+      swapButton?.addEventListener('click', async () => {
+        if (!quote) {
+          return;
+        }
+
+        try {
+          isSwapping = true;
+          quoteError = '';
+          infoMessage = 'Confirm the transaction in your wallet…';
+          render();
+
+          const receipt = await sdk.getWallet().executeCall({
+            to: quote.routerAddress,
+            data: quote.calldata,
+            value: quote.value,
+          });
+
+          infoMessage = `Swap submitted! Tx: ${receipt.transactionHash.slice(0, 10)}…`;
+          quote = null;
+          amountInput = '';
+        } catch (error) {
+          quoteError = error instanceof Error ? error.message : 'Swap failed.';
+        } finally {
+          isSwapping = false;
+          render();
         }
       });
     };
 
-    renderAndAttach();
-
+    render();
   } catch (error) {
-    console.log(error);
     app.innerHTML = `
-      <div class="container">
-        <h1>❌ Error</h1>
-        <div class="card">
-          <p><strong>Failed to load:</strong> ${error instanceof Error ? error.message : 'Unknown error'}</p>
-        </div>
+      <div class="error-state">
+        <h2>Unable to load swap app</h2>
+        <p>${error instanceof Error ? error.message : 'Unexpected error occurred.'}</p>
       </div>
     `;
   }
 }
 
-function render(container: HTMLElement, user: User, balance: string, address: string, counter: number, isSending: boolean, sendStatus: string) {
-  // Parse balance to check if > 0
-  const balanceValue = parseFloat(balance.replace('$', ''));
-  const hasBalance = balanceValue > 0;
+async function fetchQuote(amountEth: string): Promise<SwapQuote> {
+  const amountWei = parseUnits(amountEth, ETH_DECIMALS);
 
-  // Create greeting
-  const userName = user.firstName || user.username || 'Citizen'
-  const greeting = `👋 Hello, ${userName}!`;
+  if (amountWei <= 0n) {
+    throw new Error('Amount must be greater than zero.');
+  }
 
-  container.innerHTML = `
-    <div class="container">      
-      <div class="card">
-        <p style="text-align: center;">${greeting}</p>
-      </div>
+  const params = new URLSearchParams({
+    chainId: CHAIN_ID.toString(),
+    tokenIn: WETH_ADDRESS,
+    tokenOut: USDC_ADDRESS,
+    amount: amountWei.toString(),
+    type: 'exactInput',
+  });
 
-      <div class="card">
-        <h2>Wallet Demo</h2>
-        <p><strong>Address:</strong> ${address.slice(0, 6)}...${address.slice(-4)}</p>
-        <p><strong>Balance:</strong> ${balance}</p>
-        ${hasBalance ? `
-          <button 
-            id="send-btn" 
-            ${isSending ? 'disabled' : ''}
-            style="margin-top: 10px; padding: 8px 16px; font-size: 14px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: ${isSending ? 'not-allowed' : 'pointer'}; opacity: ${isSending ? '0.6' : '1'};"
-          >
-            ${isSending ? '⏳ Sending...' : '💸 Send $1 to chp!'}
-          </button>
-          ${sendStatus ? `<p style="margin-top: 10px; font-size: 14px;">${sendStatus}</p>` : ''}
-        ` : '<p style="margin-top: 10px; color: #888; font-size: 14px;">⚠️ Need balance to send</p>'}
-      </div>
+  const response = await fetch(`https://interface.gateway.uniswap.org/v1/quote?${params.toString()}`);
 
-      <div class="card">
-        <h2>Persistent Storage Demo</h2>
-        <p>This counter is stored in the host PWA's localStorage:</p>
-        <div class="counter">${counter}</div>
-        <button id="increment-btn">Increment Counter</button>
-      </div>
-    </div>
-  `;
+  if (!response.ok) {
+    const errorBody = await safeReadJson(response);
+    throw new Error(errorBody?.message ?? 'Quote request failed.');
+  }
+
+  const data = await response.json();
+
+  if (!data?.methodParameters) {
+    throw new Error('Uniswap quote did not include execution parameters.');
+  }
+
+  const amountOut = BigInt(data.quote ?? '0');
+  const minimumAmountOut = BigInt(data.guaranteedQuote ?? data.quote ?? '0');
+  const routerAddress: string = data.methodParameters.to;
+  const calldata: string = data.methodParameters.calldata;
+  const value = BigInt(data.methodParameters.value ?? '0');
+
+  if (!routerAddress || !calldata) {
+    throw new Error('Missing swap transaction data.');
+  }
+
+  return {
+    amountOut,
+    minimumAmountOut,
+    routerAddress,
+    calldata,
+    value,
+  };
+}
+
+function parseUnits(value: string, decimals: number): bigint {
+  const base = 10n ** BigInt(decimals);
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return 0n;
+  }
+
+  if (!/^\d*(\.\d*)?$/.test(normalized)) {
+    throw new Error('Enter a valid decimal number.');
+  }
+
+  const [wholePart, fractionPart = ''] = normalized.split('.');
+  const whole = wholePart === '' ? '0' : wholePart;
+  const fraction = (fractionPart + '0'.repeat(decimals)).slice(0, decimals);
+
+  return BigInt(whole) * base + BigInt(fraction);
+}
+
+function formatUnits(value: bigint, decimals: number, precision = 4): string {
+  const base = 10n ** BigInt(decimals);
+  const whole = value / base;
+  const fraction = value % base;
+  if (fraction === 0n) {
+    return whole.toString();
+  }
+
+  const fractionString = fraction.toString().padStart(decimals, '0').slice(0, precision);
+  return `${whole.toString()}.${fractionString.replace(/0+$/, '') || '0'}`;
+}
+
+function formatUserName(user: User): string {
+  if (user.firstName) return user.firstName;
+  if (user.username) return user.username;
+  return 'Frontier user';
+}
+
+function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
+async function safeReadJson(response: Response): Promise<any | null> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 init();
