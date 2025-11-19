@@ -6,8 +6,6 @@ const sdk = new FrontierSDK();
 
 // USDC on Base Sepolia
 const CHRISTIANPETERS_ETH = '0x0a3772AA1432D31CDB2e90246525496e65E99ad8';
-const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
-const ONE_DOLLAR = 1000000n; // 1 USDC with 6 decimals
 
 async function init() {
   const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -54,10 +52,9 @@ async function init() {
         renderAndAttach();
 
         try {
-          const receipt = await sdk.getWallet().transferERC20(
-            USDC_ADDRESS,
+          const receipt = await sdk.getWallet().transferFrontierDollar(
             CHRISTIANPETERS_ETH,
-            ONE_DOLLAR
+            '1.00'
           );
           
           // Refetch balance after successful transfer
