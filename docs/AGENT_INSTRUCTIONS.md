@@ -188,6 +188,22 @@ Storage is automatically scoped per app using prefix `app:{appId}:`.
 { type: 'response', requestId: '...', result: { ... } }
 ```
 
+**wallet:transferFrontierDollar**
+```typescript
+// Request
+{ 
+  type: 'wallet:transferFrontierDollar', 
+  requestId: '...', 
+  payload: {
+    to: string,            // Recipient address
+    amount: string,        // Amount as decimal string (e.g., '10.5')
+    overrides?: { ... }
+  }
+}
+// Response
+{ type: 'response', requestId: '...', result: { ... } }
+```
+
 #### Chain Access (`chain:*`)
 
 **chain:getCurrentNetwork**
@@ -263,8 +279,8 @@ Storage is automatically scoped per app using prefix `app:{appId}:`.
 
 **user:getProfile**
 ```typescript
-// Request
-{ type: 'user:getProfile', requestId: '...', payload: { id: number } }
+// Request (no payload needed - returns current user's profile)
+{ type: 'user:getProfile', requestId: '...', payload: null }
 // Response
 { 
   type: 'response', 
@@ -279,9 +295,79 @@ Storage is automatically scoped per app using prefix `app:{appId}:`.
     phoneNumber: string,
     community: string,
     communityName: string,
-    // ... additional profile fields
+    organization: string,
+    organizationRole: string,
+    socialSite: string,
+    socialHandle: string,
+    githubHandle: string,
+    currentWork: string,
+    notableWork: string,
+    receiveUpdates: boolean,
+    notificationCommunityEvent: boolean,
+    notificationTowerEvent: boolean,
+    notificationUpcomingEvent: boolean,
+    notificationTweetPicked: boolean,
+    notifyEventInvites: boolean,
+    optInSms: boolean,
+    howDidYouHearAboutUs: string,
+    braggingStatement: string,
+    contributionStatement: string,
+    hasUsablePassword: string
   }
 }
+```
+
+**user:getReferralOverview**
+```typescript
+// Request
+{ type: 'user:getReferralOverview', requestId: '...', payload: null }
+// Response
+{ 
+  type: 'response', 
+  requestId: '...', 
+  result: {
+    totalReferrals: number,
+    activeReferrals: number,
+    totalRewards: number
+  }
+}
+```
+
+**user:getReferralDetails**
+```typescript
+// Request (optional page parameter for pagination)
+{ type: 'user:getReferralDetails', requestId: '...', payload: 1 }
+// Response (paginated)
+{ 
+  type: 'response', 
+  requestId: '...', 
+  result: {
+    count: number,
+    results: Array<{
+      id: string,
+      email: string,
+      status: string,
+      createdAt: string,
+      reward?: number
+    }>
+  }
+}
+```
+
+**user:addUserContact**
+```typescript
+// Request
+{ 
+  type: 'user:addUserContact', 
+  requestId: '...', 
+  payload: {
+    email?: string,
+    phoneNumber?: string,
+    // ... additional contact fields
+  }
+}
+// Response
+{ type: 'response', requestId: '...', result: void }
 ```
 
 ## App Registration
@@ -321,6 +407,42 @@ const APP_REGISTRY: AppMetadata[] = [
 - Apps can only call methods they have permission for
 - Permission checks happen on every SDK request
 
+## UI Utilities
+
+### Detection Utilities
+
+The SDK provides utilities to detect if your app is running inside Frontier Wallet:
+
+```typescript
+import { isInFrontierApp, getParentOrigin } from '@frontiertower/frontier-sdk';
+
+// Check if running in Frontier Wallet iframe
+if (isInFrontierApp()) {
+  // Initialize SDK and app
+  const sdk = new FrontierSDK();
+} else {
+  // Show standalone message
+  renderStandaloneMessage(document.body, 'My App Name');
+}
+
+// Get parent wallet origin
+const origin = getParentOrigin();
+```
+
+### Standalone Message
+
+Display a user-friendly message when the app is accessed outside Frontier Wallet:
+
+```typescript
+import { renderStandaloneMessage, createStandaloneHTML } from '@frontiertower/frontier-sdk';
+
+// Render into a container element
+renderStandaloneMessage(document.getElementById('app'), 'My App Name');
+
+// Or get HTML string
+const html = createStandaloneHTML('My App Name');
+```
+
 ## App Development Guidelines
 
 ### 1. HTML Structure
@@ -343,7 +465,25 @@ Apps should include standard meta tags for the host to extract:
 
 ### 2. SDK Client Implementation
 
-Create a client library to communicate with the host:
+**IMPORTANT: The SDK is already installed in this project as `@frontiertower/frontier-sdk`. DO NOT implement your own SDK client. Simply import and use it.**
+
+```typescript
+import { FrontierSDK } from '@frontiertower/frontier-sdk';
+
+const sdk = new FrontierSDK();
+
+// Access different modules
+const wallet = sdk.getWallet();
+const storage = sdk.getStorage();
+const chain = sdk.getChain();
+const user = sdk.getUser();
+
+// Example usage
+const balance = await wallet.getBalance();
+const userDetails = await user.getDetails();
+```
+
+**For reference only - if you need to understand the implementation:**
 
 ```typescript
 class FrontierSDK {
@@ -603,13 +743,23 @@ my-app/
 
 ### Initialize and Load Data
 ```typescript
+import { FrontierSDK, isInFrontierApp, renderStandaloneMessage } from '@frontiertower/frontier-sdk';
+
+// Check if running in Frontier Wallet
+if (!isInFrontierApp()) {
+  renderStandaloneMessage(document.body, 'My App');
+  throw new Error('App must run in Frontier Wallet');
+}
+
+const sdk = new FrontierSDK();
+
 async function init() {
   try {
-    // Load user and wallet data
+    // Load user and wallet data using access classes
     const [user, balance, network] = await Promise.all([
-      sdk.userGetDetails(),
-      sdk.walletGetBalanceFormatted(),
-      sdk.chainGetCurrentNetwork()
+      sdk.getUser().getDetails(),
+      sdk.getWallet().getBalanceFormatted(),
+      sdk.getChain().getCurrentNetwork()
     ]);
     
     // Update UI
@@ -624,32 +774,56 @@ init();
 
 ### Persist State
 ```typescript
+const storage = sdk.getStorage();
+
 // Save state
-await sdk.storageSet('user-preferences', {
+await storage.set('user-preferences', {
   theme: 'dark',
   notifications: true
 });
 
 // Load state
-const preferences = await sdk.storageGet('user-preferences');
+const preferences = await storage.get('user-preferences');
 ```
 
 ### Handle Transactions
 ```typescript
-async function sendPayment(to: string, amount: bigint) {
+const wallet = sdk.getWallet();
+
+// Send Frontier Dollars (easiest method)
+async function sendFrontierDollars(to: string, amount: string) {
   try {
-    // Show loading
     setLoading(true);
-    
-    // Execute transaction
-    const receipt = await sdk.walletTransferNative({
-      to,
-      amount: amount.toString()
-    });
-    
-    // Show success
+    const receipt = await wallet.transferFrontierDollar(to, amount);
     showSuccess('Payment sent!');
-    
+    return receipt;
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Send native currency (ETH)
+async function sendNative(to: string, amount: bigint) {
+  try {
+    setLoading(true);
+    const receipt = await wallet.transferNative(to, amount);
+    showSuccess('Payment sent!');
+    return receipt;
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Send ERC20 tokens
+async function sendERC20(tokenAddress: string, to: string, amount: bigint) {
+  try {
+    setLoading(true);
+    const receipt = await wallet.transferERC20(tokenAddress, to, amount);
+    showSuccess('Tokens sent!');
     return receipt;
   } catch (error) {
     showError(error.message);
