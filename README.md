@@ -32,6 +32,8 @@ npm run dev
 
 ### Installing the PWA
 
+> If you are developing we recommend using Chrome and move to test the local apps before release.
+
 The Frontier Wallet is a Progressive Web App (PWA) that can be installed on your device:
 
 **iOS:**
