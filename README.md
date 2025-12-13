@@ -21,6 +21,7 @@ Find the agent instructions and deployment guide to feed to your agent here:
 ```
 ./docs/AGENT_INSTRUCTIONS.md
 ./docs/DEPLOYMENT.md
+./docs/PRD.md
 ```
 
 ### Development Setup
@@ -169,3 +170,7 @@ Apps use standard HTML meta tags for metadata (fetched by the host PWA):
 ```
 
 The host PWA parses your HTML to display the app in the store.
+
+## Contributing
+
+We welcome contributions! Please check out the [Product Requirements Document](./docs/PRD.md) to understand the goals and requirements of this project. If you find a bug or have a feature request, feel free to open an issue or submit a pull request.
