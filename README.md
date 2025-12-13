@@ -55,20 +55,76 @@ The Frontier Wallet is a Progressive Web App (PWA) that can be installed on your
 3. Click the app to load your dev environment with all permissions
 4. The kickstarter app demonstrates basic functionality for interacting with the Frontier Wallet
 
+## Features Overview
+
+This application demonstrates the core capabilities of the Frontier App Store SDK:
+
+### Wallet Access
+- Get raw and formatted balances
+- Retrieve wallet address and smart account details (ERC-4337)
+- Transfers: ERC20 tokens, native currency (ETH), Frontier Dollar
+- Execute arbitrary contract calls and approve ERC20 allowances
+
+### Persistent Storage
+- Per-app isolated storage (automatic scoping)
+- Get, set, remove, and clear keys
+
+### Network/Chain Access
+- Get current network and list available networks
+- Switch networks programmatically
+- Fetch full chain configuration (RPC, explorer, stablecoins)
+
+### User Data Access
+- Basic details (ID, email, names)
+- Extended profile data
+- Referral overview and paginated referral details
+- Add user contact info
+
+### UI Utilities
+- Detect Frontier Wallet context and show graceful standalone message when outside
+
+### Security Features
+- Sandboxed iframe isolation and strict origin verification
+- Per-app permission declarations validated on every request
+- Scoped storage, no cross-app/host DOM access
+
+### Demo App Functionality
+- Greeting with wallet address and balance
+- Persistent counter using storage
+- "Send $1 Frontier Dollar" action with real-time balance refresh
+- Loading and error handling states
+
 ## Frontier SDK
 
-The `src/frontier/` folder contains the SDK that apps use to communicate with the host PWA.
+This app uses the `@frontiertower/frontier-sdk` package to communicate with the host PWA via postMessage.
 
-**To use in your own app:**
-1. Copy the entire `src/frontier/` folder to your project
-2. Import and initialize: `const sdk = new FrontierSDK()`
-3. Use SDK methods:
-   - `sdk.getBalance()` - Get wallet balance
-   - `sdk.getAddress()` - Get wallet address
-   - `sdk.getData(key)` - Get stored data
-   - `sdk.setData(key, value)` - Store data
+Key characteristics:
+- Promise-based API with request/response matching via UUID
+- 30-second request timeout and consistent error handling
+- Permission-checked methods grouped by modules: wallet, storage, chain, user
 
-See the SDK documentation for a complete list of available permissions.
+Quick start example:
+```typescript
+import { FrontierSDK } from '@frontiertower/frontier-sdk';
+
+const sdk = new FrontierSDK();
+const wallet = sdk.getWallet();
+const storage = sdk.getStorage();
+const chain = sdk.getChain();
+const user = sdk.getUser();
+
+const balance = await wallet.getBalanceFormatted();
+const details = await user.getDetails();
+await storage.set('counter', 1);
+const network = await chain.getCurrentNetwork();
+```
+
+Permission system:
+- Format: `category:method` (e.g., `wallet:getBalance`)
+- Wildcard: `category:*` (e.g., `wallet:*`)
+- Declared in registry and enforced at runtime
+
+See `docs/AGENT_INSTRUCTIONS.md` for the full SDK surface and message formats.
 
 ## Deploying Your App
 
