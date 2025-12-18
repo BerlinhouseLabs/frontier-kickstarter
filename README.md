@@ -12,6 +12,7 @@ A minimal demo app for the Frontier App Store showing how to interact with the F
 
 - Request a test user via the tech team (no automation for this yet)
 - This app is preconfigured to be tested on `sandbox.wallet.frontiertower.io`
+- If you want to use webhooks to react to things happening in the network society checkkout `./docs/WEBHOOKS.md`
 
 
 ### Agent Context 
