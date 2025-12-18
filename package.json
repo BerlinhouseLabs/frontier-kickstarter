@@ -1,6 +1,6 @@
 {
   "name": "kickstarter-app",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@frontiertower/frontier-sdk": "^0.5.0"
+    "@frontiertower/frontier-sdk": "^0.7.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
