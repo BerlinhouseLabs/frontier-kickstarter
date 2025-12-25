@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: oklch(0.97 0.02 270);
+  --color-primary-100: oklch(0.93 0.04 270);
+  --color-primary-200: oklch(0.87 0.08 270);
+  --color-primary-300: oklch(0.78 0.12 270);
+  --color-primary-400: oklch(0.68 0.18 270);
+  --color-primary-500: oklch(0.55 0.24 270);
+  --color-primary-600: oklch(0.48 0.24 270);
+  --color-primary-700: oklch(0.42 0.22 270);
+  --color-primary-800: oklch(0.35 0.18 270);
+  --color-primary-900: oklch(0.28 0.14 270);
+  --color-primary-950: oklch(0.18 0.10 270);
+
+  --color-surface-50: oklch(0.98 0.005 270);
+  --color-surface-100: oklch(0.95 0.01 270);
+  --color-surface-200: oklch(0.90 0.015 270);
+  --color-surface-700: oklch(0.25 0.02 270);
+  --color-surface-800: oklch(0.18 0.02 270);
+  --color-surface-900: oklch(0.13 0.02 270);
+  --color-surface-950: oklch(0.08 0.015 270);
+
+  --color-success: oklch(0.72 0.19 142);
+  --color-warning: oklch(0.80 0.18 85);
+  --color-danger: oklch(0.65 0.22 25);
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+  overflow-y: scroll;
+  scrollbar-width: thin;
+}
+
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, var(--color-surface-950) 0%, var(--color-surface-900) 100%);
+  color: var(--color-surface-100);
+  min-height: 100vh;
+}
+
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    oklch(0.20 0.02 270 / 0.6) 0%,
+    oklch(0.15 0.02 270 / 0.4) 100%
+  );
+  backdrop-filter: blur(12px);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  box-shadow: 
+    0 4px 24px oklch(0 0 0 / 0.2),
+    inset 0 1px 0 oklch(1 0 0 / 0.05);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface-900);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-700);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-600);
+}
+
+::-webkit-calendar-picker-indicator {
+  display: none;
+}
