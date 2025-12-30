@@ -12,10 +12,10 @@ This guide covers deploying the Kickstarter app to various hosting platforms.
 The following Frontier Wallet domains need access to your app:
 
 - `http://localhost:5173` (development)
-- `https://sandbox.wallet.frontiertower.io` (sandbox environment)
-- `https://alpha.wallet.frontiertower.io` (production, early access, there will be dragons, design preview, use at your own risk)
-- `https://beta.wallet.frontiertower.io` (production, internally QA'd and tested, no external audit, use at your own risk)
-- `https://wallet.frontiertower.io` (production ready)
+- `https://sandbox.os.frontiertower.io` (sandbox environment)
+- `https://alpha.os.frontiertower.io` (production, early access, there will be dragons, design preview, use at your own risk)
+- `https://beta.os.frontiertower.io` (production, internally QA'd and tested, no external audit, use at your own risk)
+- `https://os.frontiertower.io` (production ready)
 
 ---
 
@@ -50,7 +50,7 @@ npm i -g vercel
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://wallet.frontiertower.io, https://alpha.wallet.frontiertower.io, https://beta.wallet.frontiertower.io, https://sandbox.wallet.frontiertower.io"
+          "value": "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io"
         },
         {
           "key": "Access-Control-Allow-Methods",
@@ -92,7 +92,7 @@ npm i -g netlify-cli
 [[headers]]
   for = "/*"
   [headers.values]
-    Access-Control-Allow-Origin = "https://wallet.frontiertower.io, https://alpha.wallet.frontiertower.io, https://beta.wallet.frontiertower.io, https://sandbox.wallet.frontiertower.io"
+    Access-Control-Allow-Origin = "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io"
     Access-Control-Allow-Methods = "GET, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type"
 ```
@@ -127,7 +127,7 @@ server {
     index index.html;
 
     # CORS headers
-    add_header Access-Control-Allow-Origin "https://wallet.frontiertower.io, https://alpha.wallet.frontiertower.io, https://beta.wallet.frontiertower.io, https://sandbox.wallet.frontiertower.io" always;
+    add_header Access-Control-Allow-Origin "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io" always;
     add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
     add_header Access-Control-Allow-Headers "Content-Type" always;
 
@@ -160,7 +160,7 @@ npm run build
 **2. Create `.htaccess` in `dist/`:**
 ```apache
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "https://wallet.frontiertower.io, https://alpha.wallet.frontiertower.io, https://beta.wallet.frontiertower.io, https://sandbox.wallet.frontiertower.io"
+    Header set Access-Control-Allow-Origin "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io"
     Header set Access-Control-Allow-Methods "GET, OPTIONS"
     Header set Access-Control-Allow-Headers "Content-Type"
 </IfModule>
@@ -184,7 +184,7 @@ npm run build
 **1. Create `_headers` file in `public/`:**
 ```
 /*
-  Access-Control-Allow-Origin: https://wallet.frontiertower.io, https://alpha.wallet.frontiertower.io, https://beta.wallet.frontiertower.io, https://sandbox.wallet.frontiertower.io
+  Access-Control-Allow-Origin: https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io
   Access-Control-Allow-Methods: GET, OPTIONS
   Access-Control-Allow-Headers: Content-Type
 ```
@@ -206,10 +206,10 @@ After deploying, test that CORS is working:
 ```bash
 # Test CORS headers
 curl -I https://kickstarter.appstore.frontiertower.io \
-  -H "Origin: https://wallet.frontiertower.io"
+  -H "Origin: https://os.frontiertower.io"
 
 # Should see:
-# Access-Control-Allow-Origin: https://wallet.frontiertower.io
+# Access-Control-Allow-Origin: https://os.frontiertower.io
 ```
 
 Or test in browser console:

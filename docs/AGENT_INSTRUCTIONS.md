@@ -395,6 +395,180 @@ export interface ListSponsorsParams {
   - Payload: `{ id: number }`
   - Result: `void`
 
+### Third-Party Access (`thirdParty:*`)
+
+Access via: `sdk.getThirdParty()`
+
+#### Types
+
+```ts
+export interface Developer {
+  id: number;
+  name: string;
+  description: string;
+  email: string;
+  apiKey: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateDeveloperRequest {
+  name?: string;
+  description?: string;
+  email?: string;
+}
+
+export interface RotateKeyResponse {
+  message: string;
+  developer: Developer;
+}
+
+export type AppStatus =
+  | 'in_review'
+  | 'accepted'
+  | 'released'
+  | 'rejected'
+  | 'request_deactivation'
+  | 'deactivated';
+
+export type AppPermission = string;
+
+export interface App {
+  id: number;
+  developer: number;
+  icon: string | null;
+  name: string;
+  readableId: string;
+  description: string;
+  url: string;
+  cnameEntry: string;
+  txtEntry: string | null;
+  permissions: AppPermission[];
+  permissionDisclaimer: string;
+  status: AppStatus;
+  reviewNotes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAppRequest {
+  developer: number;
+  url: string;
+  cnameEntry: string;
+  txtEntry?: string;
+  permissions: AppPermission[];
+  permissionDisclaimer: string;
+}
+
+export interface UpdateAppRequest {
+  developer?: number;
+  url?: string;
+  cnameEntry?: string;
+  txtEntry?: string;
+  permissions?: AppPermission[];
+  permissionDisclaimer?: string;
+}
+
+export type WebhookStatus = 'IN_REVIEW' | 'LIVE' | 'REJECTED';
+
+export type WebhookEvent = string;
+
+export type WebhookScope = Record<string, number[] | '*'>;
+
+export interface WebhookConfig {
+  events: WebhookEvent[];
+  scope: WebhookScope;
+}
+
+export interface Webhook {
+  id: number;
+  developer: number;
+  name: string;
+  description: string;
+  targetUrl: string;
+  config: WebhookConfig;
+  signingPublicKey: string;
+  status: WebhookStatus;
+  reviewNotes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWebhookRequest {
+  developer: number;
+  name: string;
+  description: string;
+  targetUrl: string;
+  config: WebhookConfig;
+}
+
+export interface UpdateWebhookRequest {
+  developer?: number;
+  name?: string;
+  description?: string;
+  targetUrl?: string;
+  config?: WebhookConfig;
+}
+
+export interface RotateWebhookKeyResponse {
+  message: string;
+  webhook: Webhook;
+}
+
+export interface ListParams {
+  limit?: number;
+  offset?: number;
+}
+```
+
+#### Methods
+
+- `thirdParty:listDevelopers`
+  - Payload: `ListParams | undefined`
+  - Result: `PaginatedResponse<Developer>`
+- `thirdParty:getDeveloper`
+  - Payload: `{ id: number }`
+  - Result: `Developer`
+- `thirdParty:updateDeveloper`
+  - Payload: `{ id: number; data: UpdateDeveloperRequest }`
+  - Result: `Developer`
+- `thirdParty:rotateDeveloperApiKey`
+  - Payload: `{ id: number }`
+  - Result: `RotateKeyResponse`
+- `thirdParty:listApps`
+  - Payload: `{ limit?: number; offset?: number; developerId?: number } | undefined`
+  - Result: `PaginatedResponse<App>`
+- `thirdParty:createApp`
+  - Payload: `CreateAppRequest`
+  - Result: `App`
+- `thirdParty:getApp`
+  - Payload: `{ id: number }`
+  - Result: `App`
+- `thirdParty:updateApp`
+  - Payload: `{ id: number; data: UpdateAppRequest }`
+  - Result: `App`
+- `thirdParty:deleteApp`
+  - Payload: `{ id: number }`
+  - Result: `void`
+- `thirdParty:listWebhooks`
+  - Payload: `{ limit?: number; offset?: number; developerId?: number } | undefined`
+  - Result: `PaginatedResponse<Webhook>`
+- `thirdParty:createWebhook`
+  - Payload: `CreateWebhookRequest`
+  - Result: `Webhook`
+- `thirdParty:getWebhook`
+  - Payload: `{ id: number }`
+  - Result: `Webhook`
+- `thirdParty:updateWebhook`
+  - Payload: `{ id: number; data: UpdateWebhookRequest }`
+  - Result: `Webhook`
+- `thirdParty:deleteWebhook`
+  - Payload: `{ id: number }`
+  - Result: `void`
+- `thirdParty:rotateWebhookSigningKey`
+  - Payload: `{ id: number }`
+  - Result: `RotateWebhookKeyResponse`
+
 ## Permissions Reference
 
 Apps must be registered with the required permissions. Common permissions:
@@ -437,6 +611,22 @@ Apps must be registered with the required permissions. Common permissions:
   - `partnerships:listAllSponsorPasses`
   - `partnerships:getSponsorPass`
   - `partnerships:revokeSponsorPass`
+- Third-Party:
+  - `thirdParty:listDevelopers`
+  - `thirdParty:getDeveloper`
+  - `thirdParty:updateDeveloper`
+  - `thirdParty:rotateDeveloperApiKey`
+  - `thirdParty:listApps`
+  - `thirdParty:createApp`
+  - `thirdParty:getApp`
+  - `thirdParty:updateApp`
+  - `thirdParty:deleteApp`
+  - `thirdParty:listWebhooks`
+  - `thirdParty:createWebhook`
+  - `thirdParty:getWebhook`
+  - `thirdParty:updateWebhook`
+  - `thirdParty:deleteWebhook`
+  - `thirdParty:rotateWebhookSigningKey`
 
 Wildcards like `wallet:*` and `storage:*` may be supported by the host permission system.
 

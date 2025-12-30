@@ -11,7 +11,7 @@ A minimal demo app for the Frontier App Store showing how to interact with the F
 ### Prerequisites
 
 - Request a test user via the tech team (no automation for this yet)
-- This app is preconfigured to be tested on `sandbox.wallet.frontiertower.io`
+- This app is preconfigured to be tested on `sandbox.os.frontiertower.io`
 - If you want to use webhooks to react to things happening in the network society checkkout `./docs/WEBHOOKS.md`
 
 
@@ -38,13 +38,13 @@ npm run dev
 The Frontier Wallet is a Progressive Web App (PWA) that can be installed on your device:
 
 **iOS:**
-1. Open Safari and navigate to [sandbox.wallet.frontiertower.io](https://sandbox.wallet.frontiertower.io)
+1. Open Safari and navigate to [sandbox.os.frontiertower.io](https://sandbox.os.frontiertower.io)
 2. Tap the Share button (square with arrow pointing up)
 3. Scroll down and tap "Add to Home Screen"
 4. Tap "Add" to confirm
 
 **Android:**
-1. Open Chrome and navigate to [sandbox.wallet.frontiertower.io](https://sandbox.wallet.frontiertower.io)
+1. Open Chrome and navigate to [sandbox.os.frontiertower.io](https://sandbox.os.frontiertower.io)
 2. Tap the three-dot menu in the top right
 3. Tap "Add to Home Screen" or "Install App"
 4. Tap "Add" or "Install" to confirm
@@ -58,18 +58,24 @@ The Frontier Wallet is a Progressive Web App (PWA) that can be installed on your
 
 ## Frontier SDK
 
-The `src/frontier/` folder contains the SDK that apps use to communicate with the host PWA.
+The SDK is available as an npm package that apps use to communicate with the host PWA.
 
 **To use in your own app:**
-1. Copy the entire `src/frontier/` folder to your project
-2. Import and initialize: `const sdk = new FrontierSDK()`
-3. Use SDK methods:
-   - `sdk.getBalance()` - Get wallet balance
-   - `sdk.getAddress()` - Get wallet address
-   - `sdk.getData(key)` - Get stored data
-   - `sdk.setData(key, value)` - Store data
+1. Install the SDK: `npm install @frontiertower/frontier-sdk`
+2. Import and initialize:
+   ```typescript
+   import { FrontierSDK } from '@frontiertower/frontier-sdk';
+   const sdk = new FrontierSDK();
+   ```
+3. Use SDK access classes:
+   - `sdk.getWallet().getBalance()` - Get wallet balance
+   - `sdk.getWallet().getAddress()` - Get wallet address
+   - `sdk.getStorage().get(key)` - Get stored data
+   - `sdk.getStorage().set(key, value)` - Store data
+   - `sdk.getUser().getProfile()` - Get user profile
+   - `sdk.getChain().getCurrentNetwork()` - Get current network
 
-See the SDK documentation for a complete list of available permissions.
+See `./docs/AGENT_INSTRUCTIONS.md` for the complete SDK surface area and permissions.
 
 ## Deploying Your App
 
