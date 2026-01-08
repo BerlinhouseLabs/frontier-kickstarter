@@ -101,6 +101,24 @@ export interface SmartAccount {
   createdAt: string;
 }
 
+export interface WalletBalance {
+  /** Total balance including both native and internal FTD */
+  total: bigint;
+  /** Native Frontier Dollar balance (freely convertible to fiat) */
+  ftd: bigint;
+  /** Internal Frontier Dollar balance (for Network Society spending) */
+  internalFtd: bigint;
+}
+
+export interface WalletBalanceFormatted {
+  /** Total balance formatted with currency symbol */
+  total: string;
+  /** Native Frontier Dollar balance formatted with currency symbol */
+  ftd: string;
+  /** Internal Frontier Dollar balance formatted with currency symbol */
+  internalFtd: string;
+}
+
 export interface GasOverrides {
   maxFeePerGas?: bigint;
   maxPriorityFeePerGas?: bigint;
@@ -147,10 +165,10 @@ export interface SwapResult {
 
 - `wallet:getBalance`
   - Payload: `undefined`
-  - Result: `bigint`
+  - Result: `WalletBalance`
 - `wallet:getBalanceFormatted`
   - Payload: `undefined`
-  - Result: `string`
+  - Result: `WalletBalanceFormatted`
 - `wallet:getAddress`
   - Payload: `undefined`
   - Result: `string`
@@ -170,6 +188,9 @@ export interface SwapResult {
   - Payload: `{ call: ExecuteCall; overrides?: GasOverrides }`
   - Result: `UserOperationReceipt`
 - `wallet:transferFrontierDollar`
+  - Payload: `{ to: string; amount: string; overrides?: GasOverrides }`
+  - Result: `UserOperationReceipt`
+- `wallet:transferInternalFrontierDollar`
   - Payload: `{ to: string; amount: string; overrides?: GasOverrides }`
   - Result: `UserOperationReceipt`
 - `wallet:executeBatchCall`
@@ -583,6 +604,7 @@ Apps must be registered with the required permissions. Common permissions:
   - `wallet:transferNative`
   - `wallet:executeCall`
   - `wallet:transferFrontierDollar`
+  - `wallet:transferInternalFrontierDollar`
   - `wallet:executeBatchCall`
   - `wallet:getSupportedTokens`
   - `wallet:swap`

@@ -1,4 +1,4 @@
-import { FrontierSDK, type User } from '@frontiertower/frontier-sdk';
+import { FrontierSDK, type User, type WalletBalanceFormatted } from '@frontiertower/frontier-sdk';
 import { isInFrontierApp, renderStandaloneMessage } from '@frontiertower/frontier-sdk/ui-utils';
 import './style.css';
 
@@ -83,13 +83,13 @@ async function init() {
   }
 }
 
-function render(container: HTMLElement, user: User, balance: string, address: string, counter: number, isSending: boolean, sendStatus: string) {
+function render(container: HTMLElement, user: User, balance: WalletBalanceFormatted, address: string, counter: number, isSending: boolean, sendStatus: string) {
   // Parse balance to check if > 0
-  const balanceValue = parseFloat(balance.replace('$', ''));
+  const balanceValue = parseFloat(balance.total.replace('$', ''));
   const hasBalance = balanceValue > 0;
 
   // Create greeting
-  const userName = user.firstName || user.username || 'Citizen'
+  const userName = user.firstName || 'Citizen'
   const greeting = `👋 Hello, ${userName}!`;
 
   container.innerHTML = `
@@ -101,7 +101,7 @@ function render(container: HTMLElement, user: User, balance: string, address: st
       <div class="card">
         <h2>Wallet Demo</h2>
         <p><strong>Address:</strong> ${address.slice(0, 6)}...${address.slice(-4)}</p>
-        <p><strong>Balance:</strong> ${balance}</p>
+        <p><strong>Total Balance:</strong> ${balance.total} <small style="color: #888;">of which ${balance.internalFtd} are iFTD</small></p>
         ${hasBalance ? `
           <button 
             id="send-btn" 
