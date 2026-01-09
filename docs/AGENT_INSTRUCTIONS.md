@@ -213,13 +213,31 @@ Access via: `sdk.getChain()`
 #### Types
 
 ```ts
+export enum Underlying {
+  USD = "USD",
+}
+
+export interface Token {
+  name: string;
+  symbol: string;
+  decimals: number;
+  address: string;
+}
+
+export interface StableCoin extends Token {
+  underlying: Underlying;
+}
+
 export interface ChainConfig {
   id: number;
   name: string;
   network: string;
+  bridgeSwapRouterFactoryAddress: string;
+  uniswapV3FactoryAddress: string;
   nativeCurrency: { name: string; symbol: string; decimals: number };
-  rpcUrl: string;
   blockExplorer: { name: string; url: string };
+  stableCoins: StableCoin[];
+  supportedTokens: Token[];
   testnet: boolean;
 }
 ```

@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@frontiertower/frontier-sdk": "0.10.0"
+    "@frontiertower/frontier-sdk": "0.11.2"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
