@@ -68,10 +68,10 @@ The SDK is available as an npm package that apps use to communicate with the hos
    const sdk = new FrontierSDK();
    ```
 3. Use SDK access classes:
-   - `sdk.getWallet().getBalance()` - Get wallet balance breakdown (FTD + Internal FTD)
+   - `sdk.getWallet().getBalance()` - Get wallet balance breakdown (FND + Internal FND)
    - `sdk.getWallet().getAddress()` - Get wallet address
-   - `sdk.getWallet().transferFrontierDollar(to, amount)` - Transfer FTD (fiat-convertible)
-   - `sdk.getWallet().transferInternalFrontierDollar(to, amount)` - Transfer Internal FTD (Network Society)
+   - `sdk.getWallet().transferFrontierDollar(to, amount)` - Transfer FND (fiat-convertible)
+   - `sdk.getWallet().transferInternalFrontierDollar(to, amount)` - Transfer Internal FND (Network Society)
    - `sdk.getStorage().get(key)` - Get stored data
    - `sdk.getStorage().set(key, value)` - Store data
    - `sdk.getUser().getProfile()` - Get user profile
@@ -81,8 +81,8 @@ The SDK is available as an npm package that apps use to communicate with the hos
 
 The Frontier Wallet supports two types of Frontier Dollars:
 
-- **Frontier Dollar (FTD)** - Freely convertible to fiat currency
-- **Internal Frontier Dollar (iFTD)** - A wrapped version of FTD designed to circulate within the Network Society. Can only be converted back to FTD by Frontier point-of-sale representatives.
+- **Frontier Network Dollar (FND)** - Freely convertible to fiat currency
+- **Internal Frontier Network Dollar (iFND)** - A wrapped version of FND designed to circulate within the Network Society. Can only be converted back to FND by Frontier point-of-sale representatives.
 
 See `./docs/AGENT_INSTRUCTIONS.md` for the complete SDK surface area and permissions.
 

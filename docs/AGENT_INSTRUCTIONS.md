@@ -102,21 +102,21 @@ export interface SmartAccount {
 }
 
 export interface WalletBalance {
-  /** Total balance including both native and internal FTD */
+  /** Total balance including both native and internal FND */
   total: bigint;
-  /** Native Frontier Dollar balance (freely convertible to fiat) */
-  ftd: bigint;
-  /** Internal Frontier Dollar balance (for Network Society spending) */
-  internalFtd: bigint;
+  /** Native Frontier Network Dollar balance (freely convertible to fiat) */
+  fnd: bigint;
+  /** Internal Frontier Network Dollar balance (for Network Society spending) */
+  internalFnd: bigint;
 }
 
 export interface WalletBalanceFormatted {
   /** Total balance formatted with currency symbol */
   total: string;
-  /** Native Frontier Dollar balance formatted with currency symbol */
-  ftd: string;
-  /** Internal Frontier Dollar balance formatted with currency symbol */
-  internalFtd: string;
+  /** Native Frontier Network Dollar balance formatted with currency symbol */
+  fnd: string;
+  /** Internal Frontier Network Dollar balance formatted with currency symbol */
+  internalFnd: string;
 }
 
 export interface GasOverrides {
@@ -126,8 +126,11 @@ export interface GasOverrides {
 }
 
 export interface ExecuteCall {
-  to: string;
+  /** Target contract address */
+  target: string;
+  /** Value to send (in wei) */
   value?: bigint;
+  /** Calldata */
   data: string;
 }
 
@@ -159,6 +162,60 @@ export interface SwapResult {
   targetToken: object;
   status: SwapResultStatus;
 }
+
+export interface UsdDepositInstructions {
+  currency: 'usd';
+  bankName: string;
+  bankAddress: string;
+  bankRoutingNumber: string;
+  bankAccountNumber: string;
+  bankBeneficiaryName: string;
+  paymentRail: string;
+}
+
+export interface EurDepositInstructions {
+  currency: 'eur';
+  iban: string;
+  bic: string;
+  bankName: string;
+  beneficiaryName: string;
+}
+
+export interface OnRampResponse<T = UsdDepositInstructions | EurDepositInstructions> {
+  currency: 'usd' | 'eur';
+  depositInstructions: T;
+  destinationAddress: string;
+}
+
+export interface LinkedBank {
+  id: string;
+  bankName: string;
+  last4: string;
+  withdrawalAddress: string;
+  chain: string;
+}
+
+export interface LinkedBanksResponse {
+  banks: LinkedBank[];
+}
+
+export interface LinkBankResponse {
+  externalAccountId: string;
+  bankName: string;
+  withdrawalAddress: string;
+  chain: string;
+}
+
+export interface BillingAddress {
+  streetLine1: string;
+  streetLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+export type AccountOwnerType = 'individual' | 'business';
 ```
 
 #### Methods
@@ -205,6 +262,33 @@ export interface SwapResult {
 - `wallet:quoteSwap`
   - Payload: `{ sourceToken: string; targetToken: string; sourceNetwork: string; targetNetwork: string; amount: string }`
   - Result: `SwapQuote`
+- `wallet:transferOverallFrontierDollar`
+  - Payload: `{ to: string; amount: string; overrides?: GasOverrides }`
+  - Result: `UserOperationReceipt`
+  - Note: Uses Internal FND first, then FND to complete the transfer
+- `wallet:getUsdDepositInstructions`
+  - Payload: `undefined`
+  - Result: `OnRampResponse<UsdDepositInstructions>`
+  - Note: Requires approved KYC
+- `wallet:getEurDepositInstructions`
+  - Payload: `undefined`
+  - Result: `OnRampResponse<EurDepositInstructions>`
+  - Note: Requires approved KYC
+- `wallet:getLinkedBanks`
+  - Payload: `undefined`
+  - Result: `LinkedBanksResponse`
+  - Note: Requires approved KYC
+- `wallet:linkUsBankAccount`
+  - Payload: `{ accountOwnerName: string; bankName: string; routingNumber: string; accountNumber: string; checkingOrSavings: 'checking' | 'savings'; address: BillingAddress }`
+  - Result: `LinkBankResponse`
+  - Note: Requires approved KYC
+- `wallet:linkEuroAccount`
+  - Payload: `{ accountOwnerName: string; accountOwnerType: AccountOwnerType; firstName: string; lastName: string; ibanAccountNumber: string; bic?: string }`
+  - Result: `LinkBankResponse`
+  - Note: Requires approved KYC
+- `wallet:deleteLinkedBank`
+  - Payload: `{ bankId: string }`
+  - Result: `void`
 
 ### Chain Access (`chain:*`)
 
@@ -335,6 +419,20 @@ export interface UserContact {
 export interface UserContactPayload {
   contacts: UserContact[];
 }
+
+export type KycStatus = 'not_started' | 'pending' | 'in_review' | 'approved' | 'rejected';
+
+export type TosStatus = 'pending' | 'approved';
+
+export interface KycStatusResponse {
+  status: KycStatus;
+  isApproved: boolean;
+  rejectionReason: string | null;
+  kycLinkId: string | null;
+  kycLinkUrl: string | null;
+  tosStatus: TosStatus | null;
+  tosLink: string | null;
+}
 ```
 
 #### Methods
@@ -354,6 +452,10 @@ export interface UserContactPayload {
 - `user:addUserContact`
   - Payload: `UserContactPayload`
   - Result: `void`
+- `user:getOrCreateKyc`
+  - Payload: `string | undefined` (optional redirect URI)
+  - Result: `KycStatusResponse`
+  - Note: Returns KYC status; if not started, initiates KYC and returns verification URL
 
 ### Partnerships Access (`partnerships:*`)
 
@@ -623,10 +725,17 @@ Apps must be registered with the required permissions. Common permissions:
   - `wallet:executeCall`
   - `wallet:transferFrontierDollar`
   - `wallet:transferInternalFrontierDollar`
+  - `wallet:transferOverallFrontierDollar`
   - `wallet:executeBatchCall`
   - `wallet:getSupportedTokens`
   - `wallet:swap`
   - `wallet:quoteSwap`
+  - `wallet:getUsdDepositInstructions`
+  - `wallet:getEurDepositInstructions`
+  - `wallet:getLinkedBanks`
+  - `wallet:linkUsBankAccount`
+  - `wallet:linkEuroAccount`
+  - `wallet:deleteLinkedBank`
 - Storage:
   - `storage:get`
   - `storage:set`
@@ -643,6 +752,7 @@ Apps must be registered with the required permissions. Common permissions:
   - `user:getReferralOverview`
   - `user:getReferralDetails`
   - `user:addUserContact`
+  - `user:getOrCreateKyc`
 - Partnerships:
   - `partnerships:listSponsors`
   - `partnerships:getSponsor`

@@ -101,7 +101,7 @@ function render(container: HTMLElement, user: User, balance: WalletBalanceFormat
       <div class="card">
         <h2>Wallet Demo</h2>
         <p><strong>Address:</strong> ${address.slice(0, 6)}...${address.slice(-4)}</p>
-        <p><strong>Total Balance:</strong> ${balance.total} <small style="color: #888;">of which ${balance.internalFtd} are iFTD</small></p>
+        <p><strong>Total Balance:</strong> ${balance.total} <small style="color: #888;">of which ${balance.internalFnd} are iFND</small></p>
         ${hasBalance ? `
           <button 
             id="send-btn" 
