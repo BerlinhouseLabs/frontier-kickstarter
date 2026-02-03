@@ -185,6 +185,7 @@ export interface OnRampResponse<T = UsdDepositInstructions | EurDepositInstructi
   currency: 'usd' | 'eur';
   depositInstructions: T;
   destinationAddress: string;
+  destinationNetwork: string;
 }
 
 export interface LinkedBank {
@@ -192,7 +193,7 @@ export interface LinkedBank {
   bankName: string;
   last4: string;
   withdrawalAddress: string;
-  chain: string;
+  network: string;
 }
 
 export interface LinkedBanksResponse {
@@ -203,7 +204,7 @@ export interface LinkBankResponse {
   externalAccountId: string;
   bankName: string;
   withdrawalAddress: string;
-  chain: string;
+  network: string;
 }
 
 export interface BillingAddress {
