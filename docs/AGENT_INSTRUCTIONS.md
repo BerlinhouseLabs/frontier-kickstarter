@@ -217,6 +217,21 @@ export interface BillingAddress {
 }
 
 export type AccountOwnerType = 'individual' | 'business';
+
+export interface DeprecatedSmartAccount {
+  /** Unique identifier */
+  id: number;
+  /** Original EOA that controlled the smart account */
+  ownerAddress: string;
+  /** Deployed smart account contract address */
+  contractAddress: string;
+  /** Network identifier (e.g., 'base', 'base_sepolia') */
+  network: string;
+  /** When the account was deprecated */
+  deprecatedAt: string;
+  /** Smart account version at deployment */
+  version: number;
+}
 ```
 
 #### Methods
@@ -290,6 +305,14 @@ export type AccountOwnerType = 'individual' | 'business';
 - `wallet:deleteLinkedBank`
   - Payload: `{ bankId: string }`
   - Result: `void`
+- `wallet:getDeprecatedSmartAccounts`
+  - Payload: `undefined`
+  - Result: `DeprecatedSmartAccount[]`
+  - Note: Returns deprecated smart accounts with active gas sponsorship
+- `wallet:payWithFrontierDollar`
+  - Payload: `{ to: string; amount: string; paymentId: string }`
+  - Result: `UserOperationReceipt`
+  - Note: Pay via PaymentRouter with payment reference UUID. Uses iFND first, then FND. Supports multi-token payments. paymentId must be a valid UUID (e.g., `550e8400-e29b-41d4-a716-446655440000`).
 
 ### Chain Access (`chain:*`)
 
@@ -341,6 +364,10 @@ export interface ChainConfig {
 - `chain:getCurrentChainConfig`
   - Payload: `undefined`
   - Result: `ChainConfig`
+- `chain:getContractAddresses`
+  - Payload: `undefined`
+  - Result: `{ fnd: string; iFnd: string | null; paymentRouter: string }`
+  - Note: Returns token addresses (FND, iFND) and PaymentRouter contract address. iFND may be null if not configured.
 
 ### User Access (`user:*`)
 
@@ -737,6 +764,8 @@ Apps must be registered with the required permissions. Common permissions:
   - `wallet:linkUsBankAccount`
   - `wallet:linkEuroAccount`
   - `wallet:deleteLinkedBank`
+  - `wallet:getDeprecatedSmartAccounts`
+  - `wallet:payWithFrontierDollar`
 - Storage:
   - `storage:get`
   - `storage:set`
@@ -747,6 +776,7 @@ Apps must be registered with the required permissions. Common permissions:
   - `chain:getAvailableNetworks`
   - `chain:switchNetwork`
   - `chain:getCurrentChainConfig`
+  - `chain:getContractAddresses`
 - User:
   - `user:getDetails`
   - `user:getProfile`
