@@ -457,7 +457,7 @@ export interface KycStatusResponse {
   isApproved: boolean;
   rejectionReason: string | null;
   kycLinkId: string | null;
-  kycLinkUrl: string | null;
+  kycLink: string | null;
   tosStatus: TosStatus | null;
   tosLink: string | null;
 }
