@@ -42,29 +42,14 @@ npm i -g vercel
 ```
 
 **2. Create `vercel.json`:**
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type"
-        }
-      ]
-    }
-  ]
-}
-```
+
+A `vercel.json` is already included in this repo with CORS and security headers pre-configured. If you need to customize it, here's what each header does:
+
+- **Access-Control-Allow-Origin**: Allows the Frontier Wallet PWA to fetch your app's metadata. Note: Vercel only supports a single origin per header value — use environment-based configuration or middleware for multiple origins.
+- **Content-Security-Policy**: Restricts which resources your app can load. The included policy allows framing by all Frontier Wallet environments via `frame-ancestors`.
+- **X-Content-Type-Options**: Prevents MIME-type sniffing.
+- **Referrer-Policy**: Controls how much referrer information is sent.
+- **Permissions-Policy**: Disables unnecessary browser APIs.
 
 **3. Deploy:**
 ```bash
@@ -284,3 +269,5 @@ const APP_REGISTRY: AppMetadata[] = [
 - Never use `Access-Control-Allow-Origin: *` in production
 - Keep the allowed origins list minimal
 - Regularly update dependencies: `npm audit fix`
+- Always include a `Content-Security-Policy` header with `frame-ancestors` set to the Frontier Wallet domains — this prevents your app from being embedded by unauthorized sites
+- Include `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` on all deployment targets
