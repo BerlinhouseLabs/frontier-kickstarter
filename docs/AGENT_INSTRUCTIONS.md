@@ -81,7 +81,6 @@ Access via: `sdk.getStorage()`
   - Payload: `{ key: string }`
   - Result: `void`
 - `storage:clear`
-  - Payload: `undefined`
   - Result: `void`
 
 ### Wallet Access (`wallet:*`)
@@ -237,16 +236,12 @@ export interface DeprecatedSmartAccount {
 #### Methods
 
 - `wallet:getBalance`
-  - Payload: `undefined`
   - Result: `WalletBalance`
 - `wallet:getBalanceFormatted`
-  - Payload: `undefined`
   - Result: `WalletBalanceFormatted`
 - `wallet:getAddress`
-  - Payload: `undefined`
   - Result: `string`
 - `wallet:getSmartAccount`
-  - Payload: `undefined`
   - Result: `SmartAccount`
 - `wallet:transferERC20`
   - Payload: `{ tokenAddress: string; to: string; amount: bigint; overrides?: GasOverrides }`
@@ -270,7 +265,6 @@ export interface DeprecatedSmartAccount {
   - Payload: `{ calls: ExecuteCall[]; overrides?: GasOverrides }`
   - Result: `UserOperationReceipt`
 - `wallet:getSupportedTokens`
-  - Payload: `undefined`
   - Result: `string[]`
 - `wallet:swap`
   - Payload: `{ sourceToken: string; targetToken: string; sourceNetwork: string; targetNetwork: string; amount: string }`
@@ -283,15 +277,12 @@ export interface DeprecatedSmartAccount {
   - Result: `UserOperationReceipt`
   - Note: Uses Internal FND first, then FND to complete the transfer
 - `wallet:getUsdDepositInstructions`
-  - Payload: `undefined`
   - Result: `OnRampResponse<UsdDepositInstructions>`
   - Note: Requires approved KYC
 - `wallet:getEurDepositInstructions`
-  - Payload: `undefined`
   - Result: `OnRampResponse<EurDepositInstructions>`
   - Note: Requires approved KYC
 - `wallet:getLinkedBanks`
-  - Payload: `undefined`
   - Result: `LinkedBanksResponse`
   - Note: Requires approved KYC
 - `wallet:linkUsBankAccount`
@@ -306,7 +297,6 @@ export interface DeprecatedSmartAccount {
   - Payload: `{ bankId: string }`
   - Result: `void`
 - `wallet:getDeprecatedSmartAccounts`
-  - Payload: `undefined`
   - Result: `DeprecatedSmartAccount[]`
   - Note: Returns deprecated smart accounts with active gas sponsorship
 - `wallet:payWithFrontierDollar`
@@ -353,21 +343,17 @@ export interface ChainConfig {
 #### Methods
 
 - `chain:getCurrentNetwork`
-  - Payload: `undefined`
   - Result: `string`
 - `chain:getAvailableNetworks`
-  - Payload: `undefined`
   - Result: `string[]`
 - `chain:switchNetwork`
   - Payload: `{ network: string }`
   - Result: `void`
 - `chain:getCurrentChainConfig`
-  - Payload: `undefined`
   - Result: `ChainConfig`
 - `chain:getContractAddresses`
-  - Payload: `undefined`
-  - Result: `{ fnd: string; iFnd: string | null; paymentRouter: string }`
-  - Note: Returns token addresses (FND, iFND) and PaymentRouter contract address. iFND may be null if not configured.
+  - Result: `{ fnd: string; iFnd: string | null; paymentRouter: string; subscriptionManager: string }`
+  - Note: Returns token addresses (FND, iFND), PaymentRouter, and SubscriptionManager contract addresses. iFND may be null if not configured.
 
 ### User Access (`user:*`)
 
@@ -448,6 +434,58 @@ export interface UserContactPayload {
   contacts: UserContact[];
 }
 
+export interface CreateSignupRequestPayload {
+  subscriptionPlan: string;
+  subscriptionInterval: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  socialSite: string;
+  socialHandle: string;
+  currentWork: string;
+  howDidYouHearAboutUs: string;
+  braggingStatement: string;
+  contributionStatement: string;
+  billingFirstName: string;
+  billingLastName: string;
+  billingEmail: string;
+  billingPhoneNumber: string;
+  paymentProvider: 'crypto';
+  smartAccount: number;
+  community: string;
+  githubHandle?: string;
+  notableWork?: string;
+  referralCode?: string;
+  receiveUpdates?: boolean;
+  optInSms?: boolean;
+  organization?: string;
+  organizationRole?: string;
+}
+
+export interface CreateSignupRequestResponse {
+  subscriptionUuid: string;
+  paymentProvider: string;
+}
+
+export interface AccessControlsPayload {
+  smartAccountAddress: string | null;
+  email: string;
+  isStaff: boolean;
+  isSuperuser: boolean;
+  /** e.g. 'active', 'canceled', 'awaiting_approval', or null if no subscription */
+  subscriptionStatus: string | null;
+  subscriptionPlan: string | null;
+  subscriptionInterval: string | null;
+  /** e.g. 'crypto', 'stripe', 'grant', 'office', 'internship', or null if no subscription */
+  subscriptionType: string | null;
+  addOns: string[];
+  communities: string[];
+  managedCommunities: string[];
+  timestamp: string;
+  kid: string;
+}
+
 export type KycStatus = 'not_started' | 'pending' | 'in_review' | 'approved' | 'rejected';
 
 export type TosStatus = 'pending' | 'approved';
@@ -466,13 +504,10 @@ export interface KycStatusResponse {
 #### Methods
 
 - `user:getDetails`
-  - Payload: `undefined`
   - Result: `User`
 - `user:getProfile`
-  - Payload: `undefined`
   - Result: `UserProfile`
 - `user:getReferralOverview`
-  - Payload: `undefined`
   - Result: `ReferralOverview`
 - `user:getReferralDetails`
   - Payload: `number | undefined` (page number)
@@ -484,6 +519,13 @@ export interface KycStatusResponse {
   - Payload: `string | undefined` (optional redirect URI)
   - Result: `KycStatusResponse`
   - Note: Returns KYC status; if not started, initiates KYC and returns verification URL
+- `user:createSignupRequest`
+  - Payload: `CreateSignupRequestPayload`
+  - Result: `CreateSignupRequestResponse`
+  - Note: Submits a new membership signup request with crypto payment. `paymentProvider` must be `'crypto'`. `smartAccount` is the smart account ID to charge.
+- `user:getVerifiedAccessControls`
+  - Result: `AccessControlsPayload`
+  - Note: Returns a cryptographically verified access controls payload signed by the Frontier API server. The SDK verifies the ECDSA secp256k1 signature against hardcoded per-environment public keys inside the iframe, so the PWA host cannot tamper with the data. **Always use this method for access decisions** — never trust unsigned user data for gating features, content, or permissions. Throws on verification failure.
 
 ### Partnerships Access (`partnerships:*`)
 
@@ -563,6 +605,39 @@ export interface ListSponsorsParams {
 - `partnerships:revokeSponsorPass`
   - Payload: `{ id: number }`
   - Result: `void`
+
+### Communities Access (`communities:*`)
+
+Access via: `sdk.getCommunities()`
+
+#### Types
+
+```ts
+export interface Community {
+  id: number;
+  name: string;
+  description: string;
+  slug: string;
+  iconName: string;
+  splashVideo: string | null;
+}
+
+export interface ListCommunitiesParams {
+  limit?: number;
+  offset?: number;
+}
+```
+
+#### Methods
+
+- `communities:listCommunities`
+  - Payload: `ListCommunitiesParams | undefined`
+  - Result: `PaginatedResponse<Community>`
+  - Note: Returns all visible communities (paginated); hidden communities are excluded
+- `communities:getCommunity`
+  - Payload: `{ idOrSlug: string | number }`
+  - Result: `Community`
+  - Note: Lookup by numeric ID or slug string
 
 ### Third-Party Access (`thirdParty:*`)
 
@@ -784,6 +859,8 @@ Apps must be registered with the required permissions. Common permissions:
   - `user:getReferralDetails`
   - `user:addUserContact`
   - `user:getOrCreateKyc`
+  - `user:createSignupRequest`
+  - `user:getVerifiedAccessControls`
 - Partnerships:
   - `partnerships:listSponsors`
   - `partnerships:getSponsor`
@@ -792,6 +869,9 @@ Apps must be registered with the required permissions. Common permissions:
   - `partnerships:listAllSponsorPasses`
   - `partnerships:getSponsorPass`
   - `partnerships:revokeSponsorPass`
+- Communities:
+  - `communities:listCommunities`
+  - `communities:getCommunity`
 - Third-Party:
   - `thirdParty:listDevelopers`
   - `thirdParty:getDeveloper`
@@ -904,6 +984,7 @@ IMPORTANT: The SDK is already provided as `@frontiertower/frontier-sdk`. Do not 
 - Origin verification is performed by the host: apps should only accept messages from the expected parent origin.
 - Apps run in a sandboxed iframe (host-controlled). Common sandbox flags include `allow-scripts`, `allow-same-origin`, `allow-forms`, and `allow-popups`.
 - Storage is scoped per app by the host (commonly via a key prefix like `app:{appId}:`).
+- **Verified access controls**: Because the PWA host relays all `postMessage` traffic, it is a potential man-in-the-middle. Data from methods like `user:getDetails` passes through the host unsigned. For any access decision (feature gating, subscription checks, role-based UI), always use `user:getVerifiedAccessControls` — it returns a payload signed by the Frontier API server and verified inside the iframe against hardcoded public keys. The host cannot forge or tamper with this data.
 
 ## Best Practices
 
