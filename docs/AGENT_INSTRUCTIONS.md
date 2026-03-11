@@ -650,7 +650,7 @@ Manage events, locations, and room bookings at Frontier Tower. Events are physic
 - **Event types**: `public` (anyone), `members_plus_one` (members + guest), `members_only`, `community_only`
 - **Locations** come in two types: `event_space` (for events) and `room` (for room bookings) — use the right type for the right endpoint
 - **Booking conflicts**: The API enforces non-overlapping bookings per location (including warmup/cooldown buffers). A `409` error means the time slot is taken.
-- **Approval flow**: Some locations require manager approval. After creation, `reviewStatus` will be `pending` until approved. Locations with `requiresApproval: false` are auto-approved.
+- **Approval flow**: Some locations require manager approval. After creation, `reviewStatus` will be `pending` until approved. Approval logic is handled server-side based on the location and user role.
 - **Max duration**: Events are limited to 3 days unless the user has special privileges.
 - **All datetimes** are ISO 8601 UTC strings (e.g. `"2025-06-15T18:00:00Z"`).
 - **Dates** for filtering use `YYYY-MM-DD` format (e.g. `"2025-06-15"`).
@@ -710,23 +710,18 @@ export interface CreateEventRequest {
 }
 
 export interface Location {
-  id: number;
+  id: number;                    // Database ID
+  owner: number | null;          // Owning community ID
   readableId: string;            // URL-safe slug (e.g. "spaceship", "room-201")
   name: string;                  // Display name
+  maxCapacity: number;
   description: string;
   directions: string;            // How to find the location
   locationType: LocationType;    // 'event_space' or 'room'
   warmupBuffer: string;          // Duration before booking (e.g. "00:10:00" = 10 min)
   cooldownBuffer: string;        // Duration after booking (e.g. "00:15:00" = 15 min)
-  onlyFoundingCitizensCanBook: boolean;
-  onlyOfficeSubscriptionHoldersCanBook: boolean;
-  onlyFloorLeadsCanBook: boolean;
-  owner: number | null;          // Owning community ID
-  floorLocation: string;         // Floor plan image URL
   openBooking: boolean;          // Allow users outside owner community to book
-  staffOnly: boolean;
-  maxCapacity: number;
-  requiresApproval: boolean;     // If true, bookings start as 'pending'
+  floorLocation: string;         // Floor plan image URL
 }
 
 export interface ListLocationsParams {
@@ -734,14 +729,10 @@ export interface ListLocationsParams {
 }
 
 export interface RoomBooking {
-  id: number;
+  id: number;                    // Database ID
   startsAt: string;              // ISO 8601 UTC datetime
   endsAt: string;                // ISO 8601 UTC datetime
   location: string;              // Location readable_id
-  host: string;                  // Host full name (read-only)
-  community: number | null;
-  reviewStatus: ReviewStatus;
-  status: EventStatus;
 }
 
 export interface ListRoomBookingsParams {
@@ -821,7 +812,7 @@ If no `coverImage` is provided, the API assigns a default image.
 - `events:createEvent`
   - Payload: `CreateEventRequest`
   - Result: `Event`
-  - Creates an event at the specified location. The location must be of type `event_space` and the user must have access. The API checks for booking conflicts (including warmup/cooldown buffers) and returns `409` if the slot is taken. If the location has `requiresApproval: true`, the event's `reviewStatus` starts as `pending`.
+  - Creates an event at the specified location. The location must be of type `event_space` and the user must have access. The API checks for booking conflicts (including warmup/cooldown buffers) and returns `409` if the slot is taken. Some locations require manager approval — the returned event's `reviewStatus` indicates whether it was auto-approved or is `pending`.
   - **Typical flow**: First call `events:listLocations` to get available `event_space` locations and their `readableId` values, then pass the desired `readableId` as the `location` field.
 - `events:addEventHost`
   - Payload: `{ eventId: number; email: string }`
@@ -830,7 +821,7 @@ If no `coverImage` is provided, the API assigns a default image.
 - `events:listLocations`
   - Payload: `ListLocationsParams | undefined`
   - Result: `Location[]` (not paginated)
-  - Returns all locations the user can book. Use `locationType: 'event_space'` to get event spaces, or `locationType: 'room'` for rooms. Check `requiresApproval`, `maxCapacity`, and the restriction flags (`onlyFoundingCitizensCanBook`, etc.) to determine if the user can book a specific location.
+  - Returns all locations the user can book (server-side filtered by role and community membership). Use `locationType: 'event_space'` to get event spaces, or `locationType: 'room'` for rooms. Use `maxCapacity` to show capacity info to users.
 - `events:listRoomBookings`
   - Payload: `ListRoomBookingsParams | undefined`
   - Result: `PaginatedResponse<RoomBooking>`
