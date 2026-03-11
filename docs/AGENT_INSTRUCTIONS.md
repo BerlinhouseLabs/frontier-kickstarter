@@ -639,6 +639,141 @@ export interface ListCommunitiesParams {
   - Result: `Community`
   - Note: Lookup by numeric ID or slug string
 
+### Events Access (`events:*`)
+
+Access via: `sdk.getEvents()`
+
+#### Types
+
+```ts
+export type EventType = 'public' | 'members_plus_one' | 'members_only' | 'community_only';
+export type EventService = 'luma' | 'private' | 'test';
+export type ReviewStatus = 'not_required' | 'approved' | 'rejected' | 'pending';
+export type EventStatus = 'active' | 'suspended' | 'archived';
+export type LocationType = 'event_space' | 'room';
+
+export interface Event {
+  id: number;
+  name: string;
+  description: string;
+  eventType: EventType;
+  eventService: EventService;
+  host: string;
+  community: number | null;
+  startsAt: string;
+  endsAt: string;
+  coverImage: string | null;
+  eventId: string;
+  location: string;
+  locationName: string;
+  displayLocation: string;
+  url: string;
+  additionalHosts: string[];
+  color: string;
+  reviewStatus: ReviewStatus;
+  status: EventStatus;
+}
+
+export interface ListEventsParams {
+  search?: string;
+  eventType?: EventType;
+  locationType?: LocationType;
+  locationId?: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+}
+
+export interface CreateEventRequest {
+  name: string;
+  eventType: EventType;
+  startsAt: string;
+  endsAt: string;
+  location: string;
+  description?: string;
+  coverImage?: string;
+  additionalHosts?: string[];
+  color?: string;
+}
+
+export interface Location {
+  id: number;
+  readableId: string;
+  name: string;
+  description: string;
+  directions: string;
+  locationType: LocationType;
+  warmupBuffer: string;
+  cooldownBuffer: string;
+  onlyFoundingCitizensCanBook: boolean;
+  onlyOfficeSubscriptionHoldersCanBook: boolean;
+  onlyFloorLeadsCanBook: boolean;
+  owner: number | null;
+  floorLocation: string;
+  openBooking: boolean;
+  staffOnly: boolean;
+  maxCapacity: number;
+  requiresApproval: boolean;
+}
+
+export interface ListLocationsParams {
+  locationType?: LocationType;
+}
+
+export interface RoomBooking {
+  id: number;
+  startsAt: string;
+  endsAt: string;
+  location: string;
+  host: string;
+  community: number | null;
+  reviewStatus: ReviewStatus;
+  status: EventStatus;
+}
+
+export interface ListRoomBookingsParams {
+  locationId?: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+}
+
+export interface CreateRoomBookingRequest {
+  startsAt: string;
+  endsAt: string;
+  location: string;
+}
+```
+
+#### Methods
+
+- `events:listEvents`
+  - Payload: `ListEventsParams | undefined`
+  - Result: `PaginatedResponse<Event>`
+  - Note: Returns active events filtered by user role and community membership
+- `events:createEvent`
+  - Payload: `CreateEventRequest`
+  - Result: `Event`
+  - Note: Creates an event; may require location approval; throws on booking conflict (409)
+- `events:addEventHost`
+  - Payload: `{ eventId: number; email: string }`
+  - Result: `Event`
+  - Note: Only the primary host can add co-hosts to upcoming events
+- `events:listLocations`
+  - Payload: `ListLocationsParams | undefined`
+  - Result: `Location[]`
+  - Note: Returns locations the user has access to (not paginated)
+- `events:listRoomBookings`
+  - Payload: `ListRoomBookingsParams | undefined`
+  - Result: `PaginatedResponse<RoomBooking>`
+  - Note: Returns approved room bookings
+- `events:createRoomBooking`
+  - Payload: `CreateRoomBookingRequest`
+  - Result: `RoomBooking`
+  - Note: Creates a room booking; throws on booking conflict (409)
+
 ### Third-Party Access (`thirdParty:*`)
 
 Access via: `sdk.getThirdParty()`
@@ -872,6 +1007,13 @@ Apps must be registered with the required permissions. Common permissions:
 - Communities:
   - `communities:listCommunities`
   - `communities:getCommunity`
+- Events:
+  - `events:listEvents`
+  - `events:createEvent`
+  - `events:addEventHost`
+  - `events:listLocations`
+  - `events:listRoomBookings`
+  - `events:createRoomBooking`
 - Third-Party:
   - `thirdParty:listDevelopers`
   - `thirdParty:getDeveloper`
