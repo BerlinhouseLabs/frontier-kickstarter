@@ -643,6 +643,18 @@ export interface ListCommunitiesParams {
 
 Access via: `sdk.getEvents()`
 
+Manage events, locations, and room bookings at Frontier Tower. Events are physical gatherings at specific locations (event spaces or rooms). Locations have booking restrictions, warmup/cooldown buffers between bookings, and optional approval requirements.
+
+#### Key Concepts
+
+- **Event types**: `public` (anyone), `members_plus_one` (members + guest), `members_only`, `community_only`
+- **Locations** come in two types: `event_space` (for events) and `room` (for room bookings) — use the right type for the right endpoint
+- **Booking conflicts**: The API enforces non-overlapping bookings per location (including warmup/cooldown buffers). A `409` error means the time slot is taken.
+- **Approval flow**: Some locations require manager approval. After creation, `reviewStatus` will be `pending` until approved. Locations with `requiresApproval: false` are auto-approved.
+- **Max duration**: Events are limited to 3 days unless the user has special privileges.
+- **All datetimes** are ISO 8601 UTC strings (e.g. `"2025-06-15T18:00:00Z"`).
+- **Dates** for filtering use `YYYY-MM-DD` format (e.g. `"2025-06-15"`).
+
 #### Types
 
 ```ts
@@ -653,126 +665,181 @@ export type EventStatus = 'active' | 'suspended' | 'archived';
 export type LocationType = 'event_space' | 'room';
 
 export interface Event {
-  id: number;
-  name: string;
-  description: string;
-  eventType: EventType;
-  eventService: EventService;
-  host: string;
-  community: number | null;
-  startsAt: string;
-  endsAt: string;
-  coverImage: string | null;
-  eventId: string;
-  location: string;
-  locationName: string;
-  displayLocation: string;
-  url: string;
-  additionalHosts: string[];
-  color: string;
-  reviewStatus: ReviewStatus;
-  status: EventStatus;
+  id: number;                    // Database ID
+  name: string;                  // Event title
+  description: string;           // Event description
+  eventType: EventType;          // Visibility type
+  eventService: EventService;    // External service (usually 'luma')
+  host: string;                  // Primary host full name (read-only)
+  community: number | null;      // Community ID, auto-determined on creation
+  startsAt: string;              // ISO 8601 UTC datetime
+  endsAt: string;                // ISO 8601 UTC datetime
+  coverImage: string | null;     // Image URL or null (see "Cover Images" below)
+  eventId: string;               // External service event ID (read-only)
+  location: string;              // Location readable_id slug (e.g. "spaceship")
+  locationName: string;          // Location display name (read-only)
+  displayLocation: string;       // Formatted display string (read-only)
+  url: string;                   // External event URL (read-only)
+  additionalHosts: string[];     // Co-host email addresses
+  color: string;                 // Hex color code, e.g. "#1E90FF"
+  reviewStatus: ReviewStatus;    // Booking approval status (read-only)
+  status: EventStatus;           // Lifecycle status (read-only)
 }
 
 export interface ListEventsParams {
-  search?: string;
-  eventType?: EventType;
-  locationType?: LocationType;
-  locationId?: string;
-  date?: string;
-  startDate?: string;
-  endDate?: string;
-  page?: number;
+  search?: string;               // Search by event name (case-insensitive partial match)
+  eventType?: EventType;         // Filter by visibility type
+  locationType?: LocationType;   // Filter by location type
+  locationId?: string;           // Filter by location readable_id (e.g. "spaceship")
+  date?: string;                 // Single date filter (YYYY-MM-DD)
+  startDate?: string;            // Range start, inclusive (YYYY-MM-DD)
+  endDate?: string;              // Range end, inclusive (YYYY-MM-DD)
+  page?: number;                 // Pagination page number
 }
 
 export interface CreateEventRequest {
-  name: string;
-  eventType: EventType;
-  startsAt: string;
-  endsAt: string;
-  location: string;
-  description?: string;
-  coverImage?: string;
-  additionalHosts?: string[];
-  color?: string;
+  name: string;                  // Event title (required)
+  eventType: EventType;          // Visibility type (required)
+  startsAt: string;              // ISO 8601 UTC datetime, must be in the future (required)
+  endsAt: string;                // ISO 8601 UTC datetime, must be after startsAt (required)
+  location: string;              // Location readable_id, must be event_space type (required)
+  description?: string;          // Event description
+  coverImage?: string;           // Base64 data URI (see "Cover Images" below)
+  additionalHosts?: string[];    // Co-host email addresses
+  color?: string;                // Hex color: "#RGB" or "#RRGGBB" (e.g. "#1E90FF")
 }
 
 export interface Location {
   id: number;
-  readableId: string;
-  name: string;
+  readableId: string;            // URL-safe slug (e.g. "spaceship", "room-201")
+  name: string;                  // Display name
   description: string;
-  directions: string;
-  locationType: LocationType;
-  warmupBuffer: string;
-  cooldownBuffer: string;
+  directions: string;            // How to find the location
+  locationType: LocationType;    // 'event_space' or 'room'
+  warmupBuffer: string;          // Duration before booking (e.g. "00:10:00" = 10 min)
+  cooldownBuffer: string;        // Duration after booking (e.g. "00:15:00" = 15 min)
   onlyFoundingCitizensCanBook: boolean;
   onlyOfficeSubscriptionHoldersCanBook: boolean;
   onlyFloorLeadsCanBook: boolean;
-  owner: number | null;
-  floorLocation: string;
-  openBooking: boolean;
+  owner: number | null;          // Owning community ID
+  floorLocation: string;         // Floor plan image URL
+  openBooking: boolean;          // Allow users outside owner community to book
   staffOnly: boolean;
   maxCapacity: number;
-  requiresApproval: boolean;
+  requiresApproval: boolean;     // If true, bookings start as 'pending'
 }
 
 export interface ListLocationsParams {
-  locationType?: LocationType;
+  locationType?: LocationType;   // Filter: 'event_space' or 'room'
 }
 
 export interface RoomBooking {
   id: number;
-  startsAt: string;
-  endsAt: string;
-  location: string;
-  host: string;
+  startsAt: string;              // ISO 8601 UTC datetime
+  endsAt: string;                // ISO 8601 UTC datetime
+  location: string;              // Location readable_id
+  host: string;                  // Host full name (read-only)
   community: number | null;
   reviewStatus: ReviewStatus;
   status: EventStatus;
 }
 
 export interface ListRoomBookingsParams {
-  locationId?: string;
-  date?: string;
-  startDate?: string;
-  endDate?: string;
+  locationId?: string;           // Filter by location readable_id
+  date?: string;                 // Single date (YYYY-MM-DD)
+  startDate?: string;            // Range start (YYYY-MM-DD)
+  endDate?: string;              // Range end (YYYY-MM-DD)
   page?: number;
 }
 
 export interface CreateRoomBookingRequest {
-  startsAt: string;
-  endsAt: string;
-  location: string;
+  startsAt: string;              // ISO 8601 UTC, must be in the future
+  endsAt: string;                // ISO 8601 UTC, must be after startsAt
+  location: string;              // Location readable_id, must be room type
 }
 ```
+
+#### Cover Images
+
+The `coverImage` field on `CreateEventRequest` accepts a **base64-encoded data URI**. The format is:
+
+```
+data:image/<format>;base64,<base64-encoded-data>
+```
+
+Supported formats: `jpeg`, `png`, `webp`, `gif`.
+
+**Converting from a file input (`<input type="file">`):**
+
+```typescript
+function fileToDataUri(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file); // Produces "data:image/jpeg;base64,/9j/4AAQ..."
+  });
+}
+
+// Usage with SDK:
+const file = inputElement.files[0]; // from <input type="file" accept="image/*">
+const coverImage = await fileToDataUri(file);
+
+await sdk.getEvents().createEvent({
+  name: 'Community Meetup',
+  eventType: 'public',
+  startsAt: '2025-06-15T18:00:00Z',
+  endsAt: '2025-06-15T20:00:00Z',
+  location: 'spaceship',
+  coverImage, // "data:image/jpeg;base64,/9j/4AAQ..."
+});
+```
+
+**Converting from a canvas element:**
+
+```typescript
+const canvas = document.getElementById('myCanvas') as HTMLCanvasElement;
+const coverImage = canvas.toDataURL('image/jpeg', 0.8); // quality 0-1
+```
+
+**Converting from a fetch response (e.g. external URL):**
+
+```typescript
+const response = await fetch('https://example.com/image.jpg');
+const blob = await response.blob();
+const coverImage = await fileToDataUri(blob); // same helper as above, works with Blob too
+```
+
+If no `coverImage` is provided, the API assigns a default image.
 
 #### Methods
 
 - `events:listEvents`
   - Payload: `ListEventsParams | undefined`
   - Result: `PaginatedResponse<Event>`
-  - Note: Returns active events filtered by user role and community membership
+  - Returns active events, ordered by `startsAt` (earliest first). Results are filtered by user role: event managers see all events; regular users see public events and events for their communities. Use `date` for a single day, or `startDate`/`endDate` for a range.
 - `events:createEvent`
   - Payload: `CreateEventRequest`
   - Result: `Event`
-  - Note: Creates an event; may require location approval; throws on booking conflict (409)
+  - Creates an event at the specified location. The location must be of type `event_space` and the user must have access. The API checks for booking conflicts (including warmup/cooldown buffers) and returns `409` if the slot is taken. If the location has `requiresApproval: true`, the event's `reviewStatus` starts as `pending`.
+  - **Typical flow**: First call `events:listLocations` to get available `event_space` locations and their `readableId` values, then pass the desired `readableId` as the `location` field.
 - `events:addEventHost`
   - Payload: `{ eventId: number; email: string }`
-  - Result: `Event`
-  - Note: Only the primary host can add co-hosts to upcoming events
+  - Result: `Event` (updated)
+  - Adds a co-host email to the event. Only the primary host can call this, and only on upcoming events (not past). Idempotent — adding an already-present email succeeds silently.
 - `events:listLocations`
   - Payload: `ListLocationsParams | undefined`
-  - Result: `Location[]`
-  - Note: Returns locations the user has access to (not paginated)
+  - Result: `Location[]` (not paginated)
+  - Returns all locations the user can book. Use `locationType: 'event_space'` to get event spaces, or `locationType: 'room'` for rooms. Check `requiresApproval`, `maxCapacity`, and the restriction flags (`onlyFoundingCitizensCanBook`, etc.) to determine if the user can book a specific location.
 - `events:listRoomBookings`
   - Payload: `ListRoomBookingsParams | undefined`
   - Result: `PaginatedResponse<RoomBooking>`
-  - Note: Returns approved room bookings
+  - Returns approved/auto-approved room bookings only (pending and rejected bookings are hidden). Use this to check room availability before creating a booking.
 - `events:createRoomBooking`
   - Payload: `CreateRoomBookingRequest`
   - Result: `RoomBooking`
-  - Note: Creates a room booking; throws on booking conflict (409)
+  - Books a room. The location must be of type `room`. Same conflict detection and approval logic as events. Returns `409` on conflict.
+  - **Typical flow**: Call `events:listLocations` with `locationType: 'room'` to find available rooms, then `events:listRoomBookings` to check existing bookings for that room, then create.
 
 ### Third-Party Access (`thirdParty:*`)
 
