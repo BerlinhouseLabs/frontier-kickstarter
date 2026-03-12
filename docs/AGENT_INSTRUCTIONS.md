@@ -610,6 +610,14 @@ export interface ListSponsorsParams {
 
 Access via: `sdk.getCommunities()`
 
+This access class covers community information, internship pass management, and member reassignment requests.
+
+#### Access Rights
+
+- **Community listing/retrieval** (`listCommunities`, `getCommunity`): No authentication required. Public API.
+- **Internship passes** (`createInternshipPass`, `listInternshipPasses`, `getInternshipPass`, `revokeInternshipPass`): Requires authentication, an active subscription, and community manager status. Only passes belonging to communities the caller manages are accessible. Superusers can access all passes. Creating a pass for a user who doesn't exist yet will auto-create an inactive account.
+- **Reassign requests** (`createReassignRequest`, `listReassignRequests`, `getReassignRequest`, `acceptReassignRequest`, `rejectReassignRequest`): Requires authentication. Creating a request requires managing the member's current community. Accepting requires managing the target community. Listing shows requests where the caller manages either the source or target community. Superusers can see and act on all requests. Only pending requests can be accepted or rejected.
+
 #### Types
 
 ```ts
@@ -626,6 +634,61 @@ export interface ListCommunitiesParams {
   limit?: number;
   offset?: number;
 }
+
+export type InternshipPassStatus = 'active' | 'revoked';
+
+export interface InternshipPass {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  community: number;
+  communityName: string;
+  status: InternshipPassStatus;
+  createdAt: string;
+  revokedAt: string | null;
+  updatedAt: string;
+}
+
+export interface CreateInternshipPassRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  community: number;
+}
+
+export interface ListInternshipPassesParams {
+  limit?: number;
+  offset?: number;
+  includeRevoked?: boolean;
+}
+
+export type ReassignRequestStatus = 'pending' | 'accepted' | 'rejected';
+
+export interface ReassignRequest {
+  id: number;
+  requester: number;
+  requesterEmail: string;
+  member: number;
+  memberEmail: string;
+  targetCommunity: number;
+  targetCommunityName: string;
+  status: ReassignRequestStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolvedBy: number | null;
+  resolvedByEmail: string | null;
+}
+
+export interface CreateReassignRequestPayload {
+  memberEmail: string;
+  targetCommunity: number;
+}
+
+export interface ListReassignRequestsParams {
+  limit?: number;
+  offset?: number;
+}
 ```
 
 #### Methods
@@ -638,6 +701,40 @@ export interface ListCommunitiesParams {
   - Payload: `{ idOrSlug: string | number }`
   - Result: `Community`
   - Note: Lookup by numeric ID or slug string
+- `communities:createInternshipPass`
+  - Payload: `CreateInternshipPassRequest`
+  - Result: `InternshipPass`
+  - Note: Creates a pass for a managed community. Auto-creates inactive user if needed. Fails if user already has an active subscription.
+- `communities:listInternshipPasses`
+  - Payload: `ListInternshipPassesParams | undefined`
+  - Result: `PaginatedResponse<InternshipPass>`
+  - Note: Returns passes for managed communities only. Active passes by default; set `includeRevoked: true` for all.
+- `communities:getInternshipPass`
+  - Payload: `{ id: number }`
+  - Result: `InternshipPass`
+- `communities:revokeInternshipPass`
+  - Payload: `{ id: number }`
+  - Result: `void`
+  - Note: Cannot revoke an already-revoked pass.
+- `communities:createReassignRequest`
+  - Payload: `CreateReassignRequestPayload`
+  - Result: `ReassignRequest`
+  - Note: Member must belong to a community the caller manages. Fails if member has no active subscription or is already in the target community.
+- `communities:listReassignRequests`
+  - Payload: `ListReassignRequestsParams | undefined`
+  - Result: `PaginatedResponse<ReassignRequest>`
+  - Note: Returns pending requests where caller manages source or target community.
+- `communities:getReassignRequest`
+  - Payload: `{ id: number }`
+  - Result: `ReassignRequest`
+- `communities:acceptReassignRequest`
+  - Payload: `{ id: number }`
+  - Result: `ReassignRequest`
+  - Note: Moves member to target community. Only target community managers (or superusers) can accept. Only pending requests.
+- `communities:rejectReassignRequest`
+  - Payload: `{ id: number }`
+  - Result: `void`
+  - Note: Only pending requests can be rejected.
 
 ### Third-Party Access (`thirdParty:*`)
 
@@ -872,6 +969,15 @@ Apps must be registered with the required permissions. Common permissions:
 - Communities:
   - `communities:listCommunities`
   - `communities:getCommunity`
+  - `communities:createInternshipPass`
+  - `communities:listInternshipPasses`
+  - `communities:getInternshipPass`
+  - `communities:revokeInternshipPass`
+  - `communities:createReassignRequest`
+  - `communities:listReassignRequests`
+  - `communities:getReassignRequest`
+  - `communities:acceptReassignRequest`
+  - `communities:rejectReassignRequest`
 - Third-Party:
   - `thirdParty:listDevelopers`
   - `thirdParty:getDeveloper`
