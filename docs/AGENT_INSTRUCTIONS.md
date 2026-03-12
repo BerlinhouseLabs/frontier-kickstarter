@@ -374,7 +374,6 @@ export interface User {
   lastName: string;
   isActive: boolean;
   dateJoined: string;
-  isStaff: boolean;
   isSuperuser: boolean;
 }
 
@@ -471,7 +470,6 @@ export interface CreateSignupRequestResponse {
 export interface AccessControlsPayload {
   smartAccountAddress: string | null;
   email: string;
-  isStaff: boolean;
   isSuperuser: boolean;
   /** e.g. 'active', 'canceled', 'awaiting_approval', or null if no subscription */
   subscriptionStatus: string | null;
