@@ -929,6 +929,73 @@ If no `coverImage` is provided, the API assigns a default image.
   - Books a room. The location must be of type `room`. Same conflict detection and approval logic as events. Returns `409` on conflict.
   - **Typical flow**: Call `events:listLocations` with `locationType: 'room'` to find available rooms, then `events:listRoomBookings` to check existing bookings for that room, then create.
 
+### Offices Access (`offices:*`)
+
+Access via: `sdk.getOffices()`
+
+#### Key Concepts
+
+Access passes grant non-citizens building access through membership contracts. Each pass is tied to a specific membership contract and a user (identified by email). If the user doesn't exist, an inactive account is created automatically. Only contract managers (organization members) or superusers can manage passes.
+
+#### Types
+
+```ts
+export type AccessPassStatus = 'active' | 'revoked';
+
+export interface AccessPass {
+  id: number;
+  email: string;               // Pass holder's email
+  firstName: string;
+  lastName: string;
+  status: AccessPassStatus;
+  membershipContract: number;   // FK to the contract
+  contractReference: string;    // Human-readable contract reference (read-only)
+  createdAt: string;            // ISO 8601
+  revokedAt: string | null;
+  updatedAt: string;            // ISO 8601
+}
+
+export interface CreateAccessPassRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  membershipContract: number;
+}
+
+export interface ListAccessPassesParams {
+  limit?: number;
+  offset?: number;
+  includeRevoked?: boolean;    // Default: false (only active passes)
+}
+```
+
+#### Access Rights
+
+All offices endpoints require:
+- **Authentication** (logged-in user)
+- **Active subscription** (HasActiveSubscription permission)
+- **Contract manager status**: The caller must be a member of the organization that owns the membership contract (IsMembershipContractManagerOrSuperuser). Superusers bypass this check.
+
+Only passes for contracts the caller manages are visible.
+
+#### Methods
+
+- `offices:createAccessPass`
+  - Payload: `CreateAccessPassRequest`
+  - Result: `AccessPass`
+  - Note: Creates an active pass. One active pass per user per contract (unique constraint). The contract must be active. If the email doesn't match an existing user, an inactive account is created.
+- `offices:listAccessPasses`
+  - Payload: `ListAccessPassesParams | undefined`
+  - Result: `PaginatedResponse<AccessPass>`
+  - Note: Returns passes for contracts the caller manages, ordered newest first. Set `includeRevoked: true` to see revoked passes.
+- `offices:getAccessPass`
+  - Payload: `{ id: number }`
+  - Result: `AccessPass`
+- `offices:revokeAccessPass`
+  - Payload: `{ id: number }`
+  - Result: `void`
+  - Note: Marks the pass as revoked (does not delete). Returns 400 if already revoked. Sends a revocation email to the pass holder.
+
 ### Third-Party Access (`thirdParty:*`)
 
 Access via: `sdk.getThirdParty()`
@@ -1171,6 +1238,11 @@ Apps must be registered with the required permissions. Common permissions:
   - `communities:getReassignRequest`
   - `communities:acceptReassignRequest`
   - `communities:rejectReassignRequest`
+- Offices:
+  - `offices:createAccessPass`
+  - `offices:listAccessPasses`
+  - `offices:getAccessPass`
+  - `offices:revokeAccessPass`
 - Events:
   - `events:listEvents`
   - `events:createEvent`
