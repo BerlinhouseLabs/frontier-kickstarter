@@ -1168,6 +1168,47 @@ export interface ListParams {
   - Payload: `{ id: number }`
   - Result: `RotateWebhookKeyResponse`
 
+### Navigation Access (`navigation:*`)
+
+Access via: `sdk.getNavigation()`
+
+Enables app-to-app deep linking. One app can open another app, optionally passing a path and query params. The target app receives the deep link data via a callback.
+
+#### Types
+
+```ts
+export interface NavigationOpenAppOptions {
+  path?: string;
+  params?: Record<string, string>;
+}
+
+export interface DeepLinkData {
+  path?: string;
+  params?: Record<string, string>;
+}
+```
+
+#### Methods
+
+- `navigation:openApp`
+  - Payload: `{ appId: string; path?: string; params?: Record<string, string> }`
+  - Result: `void`
+  - Note: Navigates the host PWA to the target app. The target app must exist in the registry. Deep link data (path/params) is forwarded to the target app after it sends `app:ready`.
+- `navigation:close`
+  - Result: `void`
+  - Note: Closes the current app and returns to the previous screen (wallet or app launcher).
+
+#### Receiving Deep Links
+
+```ts
+sdk.getNavigation().onDeepLink((data) => {
+  console.log(data.path);   // e.g. '/scan'
+  console.log(data.params); // e.g. { amount: '50' }
+});
+```
+
+The `onDeepLink` callback fires when the app was opened via another app's `openApp()`. Returns an unsubscribe function.
+
 ## Permissions Reference
 
 Apps must be registered with the required permissions. Common permissions:
@@ -1264,8 +1305,11 @@ Apps must be registered with the required permissions. Common permissions:
   - `thirdParty:updateWebhook`
   - `thirdParty:deleteWebhook`
   - `thirdParty:rotateWebhookSigningKey`
+- Navigation:
+  - `navigation:openApp`
+  - `navigation:close`
 
-Wildcards like `wallet:*` and `storage:*` may be supported by the host permission system.
+Wildcards like `wallet:*`, `storage:*`, and `navigation:*` may be supported by the host permission system.
 
 ## App Registration
 
