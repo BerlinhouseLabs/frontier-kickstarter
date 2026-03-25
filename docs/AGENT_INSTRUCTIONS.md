@@ -299,10 +299,6 @@ export interface DeprecatedSmartAccount {
 - `wallet:getDeprecatedSmartAccounts`
   - Result: `DeprecatedSmartAccount[]`
   - Note: Returns deprecated smart accounts with active gas sponsorship
-- `wallet:payWithFrontierDollar`
-  - Payload: `{ to: string; amount: string; paymentId: string }`
-  - Result: `UserOperationReceipt`
-  - Note: Pay via PaymentRouter with payment reference UUID. Uses iFND first, then FND. Supports multi-token payments. paymentId must be a valid UUID (e.g., `550e8400-e29b-41d4-a716-446655440000`).
 
 ### Chain Access (`chain:*`)
 
@@ -1236,7 +1232,6 @@ Apps must be registered with the required permissions. Common permissions:
   - `wallet:linkEuroAccount`
   - `wallet:deleteLinkedBank`
   - `wallet:getDeprecatedSmartAccounts`
-  - `wallet:payWithFrontierDollar`
 - Storage:
   - `storage:get`
   - `storage:set`
