@@ -13,9 +13,7 @@ The following Frontier Wallet domains need access to your app:
 
 - `http://localhost:5173` (development)
 - `https://sandbox.os.frontiertower.io` (sandbox environment)
-- `https://alpha.os.frontiertower.io` (production, early access, there will be dragons, design preview, use at your own risk)
-- `https://beta.os.frontiertower.io` (production, internally QA'd and tested, no external audit, use at your own risk)
-- `https://os.frontiertower.io` (production ready)
+- `https://os.frontiertower.io` (production)
 
 ---
 
@@ -77,7 +75,7 @@ npm i -g netlify-cli
 [[headers]]
   for = "/*"
   [headers.values]
-    Access-Control-Allow-Origin = "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io"
+    Access-Control-Allow-Origin = "https://os.frontiertower.io, https://sandbox.os.frontiertower.io"
     Access-Control-Allow-Methods = "GET, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type"
 ```
@@ -112,7 +110,7 @@ server {
     index index.html;
 
     # CORS headers
-    add_header Access-Control-Allow-Origin "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io" always;
+    add_header Access-Control-Allow-Origin "https://os.frontiertower.io, https://sandbox.os.frontiertower.io" always;
     add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
     add_header Access-Control-Allow-Headers "Content-Type" always;
 
@@ -145,7 +143,7 @@ npm run build
 **2. Create `.htaccess` in `dist/`:**
 ```apache
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io"
+    Header set Access-Control-Allow-Origin "https://os.frontiertower.io, https://sandbox.os.frontiertower.io"
     Header set Access-Control-Allow-Methods "GET, OPTIONS"
     Header set Access-Control-Allow-Headers "Content-Type"
 </IfModule>
@@ -169,7 +167,7 @@ npm run build
 **1. Create `_headers` file in `public/`:**
 ```
 /*
-  Access-Control-Allow-Origin: https://os.frontiertower.io, https://alpha.os.frontiertower.io, https://beta.os.frontiertower.io, https://sandbox.os.frontiertower.io
+  Access-Control-Allow-Origin: https://os.frontiertower.io, https://sandbox.os.frontiertower.io
   Access-Control-Allow-Methods: GET, OPTIONS
   Access-Control-Allow-Headers: Content-Type
 ```

@@ -114,7 +114,7 @@ Provide the following metadata:
 
 - You host your app yourself
 - We will publish it under `your-app.appstore.frontiertower.io`
-- Your app will be published in the next alpha version and make its way to public release
+- Your app will be reviewed and published to the app store
 
 ## App Metadata
 
