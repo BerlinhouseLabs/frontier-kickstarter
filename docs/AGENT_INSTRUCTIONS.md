@@ -922,6 +922,83 @@ If no `coverImage` is provided, the API assigns a default image.
   - Result: `RoomBooking`
   - Books a room. The location must be of type `room`. Same conflict detection and approval logic as events. Returns `409` on conflict.
   - **Typical flow**: Call `events:listLocations` with `locationType: 'room'` to find available rooms, then `events:listRoomBookings` to check existing bookings for that room, then create.
+- `events:getCryptoDepositPreflight`
+  - Payload: `{ eventId: number }`
+  - Result: `DepositPreflight`
+  - Read-only. Returns everything needed to approve the right ERC-20 allowance before placing an event's FND security deposit: the `spender` (our treasury), `network`, USD `amount`, and candidate `tokens` (iFND first, then FND) with on-chain `decimals` and `baseUnits`. Host-only. **Never hardcode** the spender or token addresses — always take them from here.
+- `events:placeCryptoDeposit`
+  - Payload: `{ eventId: number }`
+  - Result: `DepositResult`
+  - Places the deposit: the backend `transferFrom`s the stablecoin from the member's smart account into treasury. The member must have approved the allowance first (see the flow below). Host-only. `status: 'secured'` → collected (`reference` is the tx hash); `status: 'awaiting_payment'` → the on-chain transfer couldn't complete (insufficient iFND/FND allowance or balance) — read `statusReason`, fix it, and retry.
+
+#### Security Deposits (FND)
+
+Some events require a **refundable FND security deposit** ($400) from the host. It is collected on-chain by pulling a USD-pegged stablecoin (iFND preferred, then public FND) from the member's smart-account wallet into the platform treasury — it is **held, not spent**, and returned after the event (minus any amount withheld for damages).
+
+Each `Event` carries read-only deposit state for the host UI:
+- `isHost: boolean` — true iff the current user is the event's host (only the host can place the deposit).
+- `deposit: { status, amount, currency } | null` — show a "Secure deposit" CTA when `isHost && (deposit.status === 'required' || deposit.status === 'pending')`.
+
+```ts
+export type DepositStatus =
+  | 'not_required' | 'required' | 'pending'
+  | 'secured' | 'released' | 'withheld' | 'failed';
+
+export interface EventDeposit {        // read-only, on the Event payload
+  status: DepositStatus;
+  amount: number;                       // e.g. 400
+  currency: string;                     // e.g. "usd"
+}
+
+export interface DepositPreflight {     // getCryptoDepositPreflight result
+  spender: string;                      // approve the allowance TO this address
+  network: string;                      // e.g. "base" | "base_sepolia"
+  amount: string;                       // USD, decimal string e.g. "400.00"
+  currency: string;
+  tokens: {                             // preference order: iFND first, then FND
+    key: string;                        // "ifnd_token" | "fnd_token"
+    address: string;                    // ERC-20 contract to approve
+    decimals: number;                   // on-chain decimals
+    baseUnits: string;                  // approve amount in base units (pass as BigInt)
+  }[];
+}
+
+export interface DepositResult {        // placeCryptoDeposit result
+  provider: 'crypto';
+  status: 'secured' | 'awaiting_payment' | 'grant' | 'released' | 'withheld' | 'failed';
+  amount: string;
+  currency: string;
+  reference: string;                    // on-chain tx hash when secured
+  statusReason: string;                 // why, when not secured
+}
+```
+
+**Placing a deposit is a 3-step flow** (preflight → approve → place):
+
+```ts
+// 1. Preflight: discover the spender + candidate tokens (no hardcoding).
+const { spender, tokens } = await sdk.getEvents().getCryptoDepositPreflight({ eventId });
+// Prefer iFND (tokens[0]); fall back to FND (tokens[1]) if the member lacks iFND balance.
+const token = tokens[0];
+
+// 2. Approve the exact allowance to the spender (on-chain UserOp; the member confirms).
+//    baseUnits is a decimal string in the token's own units — pass it as a BigInt.
+await sdk.getWallet().approveERC20(token.address, spender, BigInt(token.baseUnits));
+
+// 3. Place the deposit — the backend transferFroms it into treasury.
+const result = await sdk.getEvents().placeCryptoDeposit({ eventId });
+if (result.status === 'secured') {
+  // Done — result.reference is the on-chain tx hash.
+} else if (result.status === 'awaiting_payment') {
+  // Not secured: result.statusReason explains why (usually insufficient allowance/balance
+  // in both iFND and FND). Have the member top up / re-approve, then retry steps 2–3.
+}
+```
+
+Notes:
+- The member's wallet is always their own deployed smart account (resolved server-side) — you never pass a wallet address.
+- If a sufficient standing allowance already exists (e.g. from FND subscriptions), step 2 can be skipped and placing still succeeds.
+- Errors: `403` (not the host), `400` (`No deposit required for this event`, or already resolved), `404` (event not found).
 
 ### Offices Access (`offices:*`)
 
@@ -1284,6 +1361,8 @@ Apps must be registered with the required permissions. Common permissions:
   - `events:listLocations`
   - `events:listRoomBookings`
   - `events:createRoomBooking`
+  - `events:getCryptoDepositPreflight`
+  - `events:placeCryptoDeposit`
 - Third-Party:
   - `thirdParty:listDevelopers`
   - `thirdParty:getDeveloper`
