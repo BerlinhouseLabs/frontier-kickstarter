@@ -1,8 +1,11 @@
 # Frontier Kickstarter App
 
-A minimal demo app for the Frontier App Store showing how to interact with the Frontier Wallet.
+[![CI main](https://github.com/BerlinhouseLabs/frontier-kickstarter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/BerlinhouseLabs/frontier-kickstarter/actions/workflows/ci.yml)
+[![CI staging](https://github.com/BerlinhouseLabs/frontier-kickstarter/actions/workflows/ci.yml/badge.svg?branch=staging)](https://github.com/BerlinhouseLabs/frontier-kickstarter/actions/workflows/ci.yml)
 
-## ⚠️ Disclaimer
+A minimal example app for [Frontier OS](https://os.frontiertower.io), the app platform of Frontier Tower. It shows how an app inside the Frontier Wallet uses the [Frontier Wallet SDK](https://github.com/BerlinhouseLabs/frontier-sdk) to read a balance, send payments and store data. Clone it as a starting point for your own app, or hand its `docs/` to your coding agent.
+
+## Disclaimer
 
 **If you are using this, you are in the ultra-early developer group. There will be dragons, things will break.**
 
@@ -26,10 +29,15 @@ Find the agent instructions and deployment guide to feed to your agent here:
 
 ### Development Setup
 
+Node 22 (see `.nvmrc`).
+
 ```bash
-npm install
-npm run dev
+npm ci
+npm run dev      # Vite dev server on http://localhost:5174
+npm run build    # production build into dist/
 ```
+
+There is no test suite; CI builds the app on every pull request.
 
 ### Installing the PWA
 
@@ -129,3 +137,15 @@ Apps use standard HTML meta tags for metadata (fetched by the host PWA):
 ```
 
 The host PWA parses your HTML to display the app in the store.
+
+## Deploys
+
+Merging to `staging` or `main` runs CI only; nothing deploys from this repo's pipeline. `vercel.json` carries the CORS, CSP and frame-ancestors headers an app needs to load inside the wallet, so it can be hosted on Vercel as-is. To undo a bad change, revert it through a normal pull request.
+
+## Where it fits
+
+Example app for [frontier-sdk](https://github.com/BerlinhouseLabs/frontier-sdk), loaded into the Frontier Wallet PWA. See [the org repo index](https://github.com/BerlinhouseLabs/berlinhouse-labs/blob/staging/index/repos.md) for the other repos.
+
+## License
+
+MIT, see [LICENSE](./LICENSE).
