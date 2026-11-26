@@ -13,11 +13,12 @@ Minimal example Frontier OS app (Vite + TypeScript) showing the Frontier Wallet 
 
 ```bash
 npm ci
-npm run dev     # Vite on :5174
-npm run build   # CI runs this
+npm run dev       # Vite on :5174
+npx tsc --noEmit  # CI runs this
+npm run build     # CI runs this
 ```
 
-No tests exist. `npx tsc --noEmit` currently fails (`src/main.ts` uses SDK APIs that are not in the pinned version), so CI only builds.
+No tests exist. `vite build` does not type-check, so CI runs `tsc --noEmit` before the build.
 
 ## Map
 
@@ -31,4 +32,4 @@ Nothing deploys from this repo's CI. Revert through a normal PR.
 
 ## Exceptions to the org repo standards
 
-- No tests, lint or format checks, coverage floor or dependency audit yet.
+- No tests, lint or format checks, coverage floor or dependency audit yet (CI type-checks and builds).

@@ -1,10 +1,23 @@
-import { FrontierSDK, type User, type WalletBalanceFormatted, type DeepLinkData } from '@frontiertower/frontier-sdk';
+import {
+  FrontierSDK,
+  formatAmount,
+  parseAmount,
+  type DeepLinkData,
+  type User,
+  type WalletBalance,
+} from '@frontiertower/frontier-sdk';
 import { isInFrontierApp, renderStandaloneMessage } from '@frontiertower/frontier-sdk/ui-utils';
 import './style.css';
 
 const sdk = new FrontierSDK();
 
 const CHRISTIANPETERS_ETH = '0x0a3772AA1432D31CDB2e90246525496e65E99ad8';
+
+// Token amounts are bigint base units. parseAmount turns a decimal string into base units.
+const SEND_AMOUNT = parseAmount('1.00');
+
+// formatAmount turns base units back into a decimal string, e.g. 75500000n -> "75.5".
+const formatUsd = (amount: bigint) => `$${formatAmount(amount)}`;
 
 async function init() {
   const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -23,7 +36,7 @@ async function init() {
     const user = await sdk.getUser().getDetails();
 
     // Fetch wallet data
-    let balance = await sdk.getWallet().getBalanceFormatted();
+    let balance = await sdk.getWallet().getBalance();
     const address = await sdk.getWallet().getAddress();
 
     // Get stored counter or initialize
@@ -61,11 +74,11 @@ async function init() {
         try {
           const receipt = await sdk.getWallet().transferFrontierDollar(
             CHRISTIANPETERS_ETH,
-            '1.00'
+            SEND_AMOUNT
           );
 
           // Refetch balance after successful transfer
-          balance = await sdk.getWallet().getBalanceFormatted();
+          balance = await sdk.getWallet().getBalance();
           sendStatus = `✅ Sent! Tx: ${receipt.transactionHash.slice(0, 10)}...`;
         } catch (error) {
           sendStatus = `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -117,10 +130,8 @@ async function init() {
   }
 }
 
-function render(container: HTMLElement, user: User, balance: WalletBalanceFormatted, address: string, counter: number, isSending: boolean, sendStatus: string, deepLinkInfo: DeepLinkData | null, deepLinkStatus: string) {
-  // Parse balance to check if > 0
-  const balanceValue = parseFloat(balance.total.replace('$', ''));
-  const hasBalance = balanceValue > 0;
+function render(container: HTMLElement, user: User, balance: WalletBalance, address: string, counter: number, isSending: boolean, sendStatus: string, deepLinkInfo: DeepLinkData | null, deepLinkStatus: string) {
+  const hasBalance = balance.total > 0n;
 
   // Create greeting
   const userName = user.firstName || 'Citizen'
@@ -143,7 +154,7 @@ function render(container: HTMLElement, user: User, balance: WalletBalanceFormat
       <div class="card">
         <h2>Wallet Demo</h2>
         <p><strong>Address:</strong> ${address.slice(0, 6)}...${address.slice(-4)}</p>
-        <p><strong>Total Balance:</strong> ${balance.total} <small style="color: #888;">of which ${balance.internalFnd} are iFND</small></p>
+        <p><strong>Total Balance:</strong> ${formatUsd(balance.total)} <small style="color: #888;">of which ${formatUsd(balance.internalFnd)} are iFND</small></p>
         ${hasBalance ? `
           <button
             id="send-btn"
