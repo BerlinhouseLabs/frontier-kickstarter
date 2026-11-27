@@ -1,0 +1,35 @@
+# Managed by Terraform from berlinhouse-labs (template: files/source-is-staging.yml, written
+# by rulesets.tf to main and staging of every standard repo, berlinhouse-labs included);
+# edit the template, edits here are overwritten. main-integrity requires its check
+# `source-is-staging`, so a PR into main must come from this repo's staging.
+name: source-is-staging
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  source-is-staging:
+    name: source-is-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require the PR to come from staging
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REF" != "staging" ]; then
+            echo "::error::PRs into $BASE_REF must come from staging (this one is from '$HEAD_REF'). Open the PR against staging instead."
+            exit 1
+          fi
+          # A fork's branch named staging is not this repo's staging.
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "::error::PRs into $BASE_REF must come from staging in $REPO (this one is from $HEAD_REPO)."
+            exit 1
+          fi
+          echo "PR comes from staging."
