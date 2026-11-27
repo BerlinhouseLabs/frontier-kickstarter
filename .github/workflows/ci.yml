@@ -16,4 +16,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
       - run: npm run build

@@ -87,6 +87,18 @@ Access via: `sdk.getStorage()`
 
 Access via: `sdk.getWallet()`
 
+All token amounts (balances, transfer and swap amounts, quotes) are `bigint` values in the token's base units. Convert with the helpers exported from the package root:
+
+```ts
+import { parseAmount, formatAmount } from '@frontiertower/frontier-sdk';
+
+const { total } = await sdk.getWallet().getBalance();
+console.log(formatAmount(total)); // e.g. "75.5" (trailing zeros are dropped)
+await sdk.getWallet().transferFrontierDollar(to, parseAmount('10.5'));
+```
+
+`formatAmount` drops trailing zeros. For a currency display such as `$75.50`, pad the fraction to two digits yourself; `src/main.ts` shows how (`formatUsd`).
+
 #### Types
 
 ```ts
@@ -107,15 +119,6 @@ export interface WalletBalance {
   fnd: bigint;
   /** Internal Frontier Network Dollar balance (for Network Society spending) */
   internalFnd: bigint;
-}
-
-export interface WalletBalanceFormatted {
-  /** Total balance formatted with currency symbol */
-  total: string;
-  /** Native Frontier Network Dollar balance formatted with currency symbol */
-  fnd: string;
-  /** Internal Frontier Network Dollar balance formatted with currency symbol */
-  internalFnd: string;
 }
 
 export interface GasOverrides {
@@ -145,8 +148,8 @@ export interface SwapQuote {
   targetChain: object;
   sourceToken: object;
   targetToken: object;
-  expectedAmountOut: string;
-  minAmountOut: string;
+  expectedAmountOut: bigint;
+  minAmountOut: bigint;
 }
 
 export enum SwapResultStatus {
@@ -237,8 +240,6 @@ export interface DeprecatedSmartAccount {
 
 - `wallet:getBalance`
   - Result: `WalletBalance`
-- `wallet:getBalanceFormatted`
-  - Result: `WalletBalanceFormatted`
 - `wallet:getAddress`
   - Result: `string`
 - `wallet:getSmartAccount`
@@ -256,10 +257,10 @@ export interface DeprecatedSmartAccount {
   - Payload: `{ call: ExecuteCall; overrides?: GasOverrides }`
   - Result: `UserOperationReceipt`
 - `wallet:transferFrontierDollar`
-  - Payload: `{ to: string; amount: string; overrides?: GasOverrides }`
+  - Payload: `{ to: string; amount: bigint; overrides?: GasOverrides }`
   - Result: `UserOperationReceipt`
 - `wallet:transferInternalFrontierDollar`
-  - Payload: `{ to: string; amount: string; overrides?: GasOverrides }`
+  - Payload: `{ to: string; amount: bigint; overrides?: GasOverrides }`
   - Result: `UserOperationReceipt`
 - `wallet:executeBatchCall`
   - Payload: `{ calls: ExecuteCall[]; overrides?: GasOverrides }`
@@ -267,13 +268,13 @@ export interface DeprecatedSmartAccount {
 - `wallet:getSupportedTokens`
   - Result: `string[]`
 - `wallet:swap`
-  - Payload: `{ sourceToken: string; targetToken: string; sourceNetwork: string; targetNetwork: string; amount: string }`
+  - Payload: `{ sourceToken: string; targetToken: string; sourceNetwork: string; targetNetwork: string; amount: bigint }`
   - Result: `SwapResult`
 - `wallet:quoteSwap`
-  - Payload: `{ sourceToken: string; targetToken: string; sourceNetwork: string; targetNetwork: string; amount: string }`
+  - Payload: `{ sourceToken: string; targetToken: string; sourceNetwork: string; targetNetwork: string; amount: bigint }`
   - Result: `SwapQuote`
 - `wallet:transferOverallFrontierDollar`
-  - Payload: `{ to: string; amount: string; overrides?: GasOverrides }`
+  - Payload: `{ to: string; amount: bigint; overrides?: GasOverrides }`
   - Result: `UserOperationReceipt`
   - Note: Uses Internal FND first, then FND to complete the transfer
 - `wallet:getUsdDepositInstructions`
@@ -1288,7 +1289,6 @@ Apps must be registered with the required permissions. Common permissions:
 
 - Wallet:
   - `wallet:getBalance`
-  - `wallet:getBalanceFormatted`
   - `wallet:getAddress`
   - `wallet:getSmartAccount`
   - `wallet:transferERC20`
