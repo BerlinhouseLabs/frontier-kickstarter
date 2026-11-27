@@ -93,9 +93,11 @@ All token amounts (balances, transfer and swap amounts, quotes) are `bigint` val
 import { parseAmount, formatAmount } from '@frontiertower/frontier-sdk';
 
 const { total } = await sdk.getWallet().getBalance();
-console.log(formatAmount(total)); // e.g. "75.5"
+console.log(formatAmount(total)); // e.g. "75.5" (trailing zeros are dropped)
 await sdk.getWallet().transferFrontierDollar(to, parseAmount('10.5'));
 ```
+
+`formatAmount` drops trailing zeros. For a currency display such as `$75.50`, pad the fraction to two digits yourself; `src/main.ts` shows how (`formatUsd`).
 
 #### Types
 

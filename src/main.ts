@@ -17,7 +17,11 @@ const CHRISTIANPETERS_ETH = '0x0a3772AA1432D31CDB2e90246525496e65E99ad8';
 const SEND_AMOUNT = parseAmount('1.00');
 
 // formatAmount turns base units back into a decimal string, e.g. 75500000n -> "75.5".
-const formatUsd = (amount: bigint) => `$${formatAmount(amount)}`;
+// For display, pad to at least two decimals: "75.5" -> "$75.50", "12" -> "$12.00".
+const formatUsd = (amount: bigint) => {
+  const [whole, fraction = ''] = formatAmount(amount).split('.');
+  return `$${whole}.${fraction.padEnd(2, '0')}`;
+};
 
 async function init() {
   const app = document.querySelector<HTMLDivElement>('#app')!;
